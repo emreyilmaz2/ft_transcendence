@@ -1,0 +1,19 @@
+CSRF (Cross-Site Request Forgery), genellikle "session riding" veya "one-click attack" olarak da adlandırılan bir saldırı türüdür.
+Bu saldırı türünde, bir kullanıcının tarayıcısında oturum açıkken, kötü niyetli bir saldırganın kontrolündeki
+başka bir web sitesi veya içerik, kullanıcının adına istekler gönderir.
+
+Bu tür saldırıların önlenmesi için Django gibi birçok web uygulama çerçevesi, CSRF koruması sağlar.
+CSRF koruması, her form veya AJAX isteği için sunucu tarafında benzersiz bir token oluşturulmasını ve bu token'ın talebe eklenmesini gerektirir.
+Bu token, kullanıcının oturumunu belirtir ve yalnızca sayfanın sunucusunda oluşturulan formlarla ilişkilendirilir.
+
+Örneğin, bir kullanıcı bir web uygulamasına giriş yaptığında, sunucu tarafından oturum bilgileri oluşturulur ve kullanıcıya özel bir CSRF token
+da üretilir. Bu token, kullanıcının tarayıcısında saklanır ve sayfanın form veya AJAX isteklerine eklenir. 
+Sunucu, bir istek aldığında, bu CSRF token'ı kontrol eder ve token'ın doğru olduğunu doğruladıktan sonra isteği işler.
+
+Django'da CSRF koruması varsayılan olarak etkindir. Oturum açan her kullanıcı, sunucu tarafından oluşturulan CSRF token'ını alır. 
+Bu token, kullanıcının tarayıcısında saklanır ve sunucuya her istek gönderildiğinde, isteğe otomatik olarak eklenir. 
+Bu sayede, kullanıcılar oturum açıkken bile kötü niyetli bir saldırgan tarafından gönderilen isteklerin yanıltılmasını önlenir.
+
+Özetle, CSRF token'ı, her isteğin kullanıcının oturumunu doğrulamasına yardımcı olan bir güvenlik önlemidir. 
+Django ve benzeri çerçeveler, bu token'ı otomatik olarak oluşturur ve kullanıcı oturumu açıkken isteklere ekler. 
+Bu sayede, kullanıcıların güvenliği ve gizliliği korunmuş olur.
