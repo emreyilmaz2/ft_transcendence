@@ -33,3 +33,10 @@ Show Commands History: “\s”
 Execute Previous Command: “\g”
 Clear Screen: “\! cls”
 Quit psql: “\q”
+
+
+#DOCKER KOMUTLARI
+docker ps                               // calisan konteynerleri goster
+docker exec -it 'container_name' 'bash' // konteyner in icinde komut calistir
+docker container ls
+docker volume ls
