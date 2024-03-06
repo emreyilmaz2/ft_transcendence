@@ -33,3 +33,7 @@ Show Commands History: “\s”
 Execute Previous Command: “\g”
 Clear Screen: “\! cls”
 Quit psql: “\q”
+
+#Docker Command
+
+docker compose up --build
