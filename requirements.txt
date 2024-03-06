@@ -5,3 +5,5 @@ psycopg2-binary>=2.8.6
 django-cors-headers>=3.7.0
 pillow
 django-cors-headers
+PyJWT
+django-filter

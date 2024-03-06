@@ -1,3 +1,4 @@
+#CSRF NEDIR
 CSRF (Cross-Site Request Forgery), genellikle "session riding" veya "one-click attack" olarak da adlandırılan bir saldırı türüdür.
 Bu saldırı türünde, bir kullanıcının tarayıcısında oturum açıkken, kötü niyetli bir saldırganın kontrolündeki
 başka bir web sitesi veya içerik, kullanıcının adına istekler gönderir.
@@ -17,3 +18,18 @@ Bu sayede, kullanıcılar oturum açıkken bile kötü niyetli bir saldırgan ta
 Özetle, CSRF token'ı, her isteğin kullanıcının oturumunu doğrulamasına yardımcı olan bir güvenlik önlemidir. 
 Django ve benzeri çerçeveler, bu token'ı otomatik olarak oluşturur ve kullanıcı oturumu açıkken isteklere ekler. 
 Bu sayede, kullanıcıların güvenliği ve gizliliği korunmuş olur.
+
+#PSQL KOMUTLARI
+Connect to a Database: “psql -d db_name -U user_name”.
+List All Databases: “\l”
+Access or Switch a Database: “\c db_name”
+List All Tables: “\dt”
+List Data on a Table "SELECT*FROM db_name;"
+
+Describe a Specific Table: “\d tab_name”
+List All Schemas: “\dn”
+List All Users: “\du”
+Show Commands History: “\s”
+Execute Previous Command: “\g”
+Clear Screen: “\! cls”
+Quit psql: “\q”
