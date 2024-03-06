@@ -34,6 +34,15 @@ Execute Previous Command: “\g”
 Clear Screen: “\! cls”
 Quit psql: “\q”
 
+<<<<<<< HEAD
 #Docker Command
 
 docker compose up --build
+=======
+
+#DOCKER KOMUTLARI
+docker ps                               // calisan konteynerleri goster
+docker exec -it 'container_name' 'bash' // konteyner in icinde komut calistir
+docker container ls
+docker volume ls
+>>>>>>> 1a0855e611455ce5a738e7860af07aa16415ef66
