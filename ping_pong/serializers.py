@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from .models import Friendship
+from .models import FriendRequest
 from django.contrib.auth.models import User
 
 
@@ -22,26 +22,27 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
         return user
-
-class UserLoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
-    password = serializers.CharField()
-
-    def validate(self, data):
-        user = authenticate(username=data['username'], password=data['password'])
-        if user and user.is_active:
-            return user
-        raise serializers.ValidationError("Geçersiz kimlik bilgileri.")
     
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'avatar', 'friends']
 
-class FriendshipSerializer(serializers.ModelSerializer):
+class FriendRequestSerializer(serializers.ModelSerializer):
+    sender = serializers.SerializerMethodField()
+    receiver = serializers.SerializerMethodField()
     class Meta:
-        model = Friendship
-        fields = ['id', 'sender', 'receiver', 'status']
+        model = FriendRequest
+        fields = ['id', 'sender', 'receiver', 'status', 'timestamp']
+
+    def get_sender(self, obj):
+        sender_id = obj.sender.id
+        sender_username = obj.sender.username
+        return f"{sender_id} - {sender_username}"
+    def get_receiver(self, obj):
+        receiver_id = obj.receiver.id
+        receiver_username = obj.receiver.username
+        return f"{receiver_id} - {receiver_username}"
 
 class UpdateSerializer(serializers.Serializer):
     name = serializers.CharField(required=False)

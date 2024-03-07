@@ -19,12 +19,16 @@ Bu sayede, kullanıcılar oturum açıkken bile kötü niyetli bir saldırgan ta
 Django ve benzeri çerçeveler, bu token'ı otomatik olarak oluşturur ve kullanıcı oturumu açıkken isteklere ekler. 
 Bu sayede, kullanıcıların güvenliği ve gizliliği korunmuş olur.
 
+
+
+
 #PSQL KOMUTLARI
 Connect to a Database: “psql -d db_name -U user_name”.
 List All Databases: “\l”
 Access or Switch a Database: “\c db_name”
 List All Tables: “\dt”
 List Data on a Table "SELECT*FROM db_name;"
+Drop an item from table "DELETE FROM todos WHERE id = 1"
 
 Describe a Specific Table: “\d tab_name”
 List All Schemas: “\dn”
@@ -34,15 +38,34 @@ Execute Previous Command: “\g”
 Clear Screen: “\! cls”
 Quit psql: “\q”
 
-<<<<<<< HEAD
-#Docker Command
 
-docker compose up --build
-=======
+
+
 
 #DOCKER KOMUTLARI
 docker ps                               // calisan konteynerleri goster
 docker exec -it 'container_name' 'bash' // konteyner in icinde komut calistir
 docker container ls
 docker volume ls
->>>>>>> 1a0855e611455ce5a738e7860af07aa16415ef66
+
+
+API'ler icin kullanma kilavuzu
+1- path('users/', ListUsersView.as_view(), name='user-list'),
+    amac:       Serverdaki kayitli kullanicilari gormek icin kullanilir.
+    endpoint:   localhost:8000/api/users
+    body:       bir sey eklenmesine gerek yoktur.
+
+2- path('profile_update/', UserUpdateView.as_view(), name='profile-update'),
+    amac:       Kullanicin bilgilerini guncellemek icin kullanilir.
+    endpoint:   localhost:8000/api/profile_update
+    body        !(Detayli bilgi icin tunahan turnaya danisin)!
+
+3- path('send_friend_request/<int:receiver_user_id>/', sendFriendRequest.as_view(), name='send_friend_request'),
+    amac:       Arkadaslik istegi gondermek icin kullanilir. Diger kullanicilari gormek icin 1 numarali api'yi kullanabilirsiniz
+    endpoint:   localhost:8000/api/send_friend_request/2/ (2 numarali kullaniciya istek at)
+    body:       bir sey eklenmesine gerek yoktur.
+
+4- path('friend_requests/', ViewFriendRequest.as_view(), name='friend_request'),
+    amac:       Arkadaslik isteklerini gormek icin kullanilir.
+    endpoint:   localhost:8000/api/friend_requests/
+    body:       bir sey eklenmesine gerek yoktur.
