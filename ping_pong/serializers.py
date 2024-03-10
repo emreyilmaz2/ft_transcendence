@@ -7,13 +7,16 @@ from django.contrib.auth.models import User
 
 User = get_user_model()
 
+class FriendSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'first_name', 'last_name']
+
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
-
     class Meta:
         model = User
         fields = ('id', 'username', 'email', 'password', 'avatar')
-
     def create(self, validated_data):
         user = User.objects.create(
             username=validated_data['username'],
@@ -58,11 +61,14 @@ class UpdateSerializer(serializers.Serializer):
         return data
 
     def update(self, instance, validated_data):
-        #instance.first_name = validated_data.get('name', instance.first_name)
-        #instance.last_name = validated_data.get('surname', instance.last_name)
-        #instance.email = validated_data.get('mail', instance.email)
         instance.username = validated_data.get('username', instance.username)
-        if validated_data.get('password1') and validated_data.get('password2'):
-            instance.set_password(validated_data['password1'])
+        instance.email = validated_data.get('mail', instance.email)
+        instance.first_name = validated_data.get('name', instance.first_name)
+        instance.last_name = validated_data.get('surname', instance.last_name)
+        
+        password1 = validated_data.get('password1')
+        if password1:
+            instance.set_password(password1)
+        
         instance.save()
         return instance

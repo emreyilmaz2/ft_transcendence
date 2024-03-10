@@ -44,6 +44,8 @@ Quit psql: “\q”
 
 #DOCKER KOMUTLARI
 docker ps                               // calisan konteynerleri goster
+docker compose build                    // Build alan komut
+docker compose up --build               // Ayaga kaldirir ama once build alir
 docker exec -it 'container_name' 'bash' // konteyner in icinde komut calistir
 docker container ls
 docker volume ls

@@ -1,19 +1,16 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 
 # Create your models here.
 class User(AbstractUser):
     avatar = models.ImageField(upload_to='images/', null=True, blank=True)  # Örnek bir avatar alanı
-    # friends = models.ManyToManyField('User', related_name='user_friends', blank=True)
+    friends = models.ManyToManyField('User', related_name='user_friends', blank=True)
     has_logged_in = models.BooleanField(default=False)
-
-class FriendList(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="user")
-    friends = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name="friends")
     
     def __str__(self):
-        return self.user.name
+        return self.username
     def add_friend(self, friend):
         # Adding a new friend
         if not friend in self.friends.all():
@@ -29,8 +26,8 @@ class FriendList(models.Model):
         remove_friend_list = self
         remove_friend_list.remove_friend(friende)
         # Remove yourself the list that belongs the person
-        friendList = FriendList.object.get(user=friende)
-        friendList.remove_friend(self.user)
+        friendList = User.object.get(user=friende)
+        friendList.friends.remove_friend(self.user)
     def is_friend(self, friend):
         # Check if we are friend
         if friend in self.friends.all():
@@ -48,14 +45,14 @@ class FriendRequest(models.Model):
         return self.sender.username
     def accept(self):
         # Accept a friend Request
-        receiver_friend_list = FriendList.objects.get(user=self.receiver)
+        receiver_friend_list = User.objects.get(id=self.receiver.id)
         if receiver_friend_list:
             receiver_friend_list.add_friend(self.sender)
-            sender_friend_list = FriendList.objects.get(user=self.sender)
+            sender_friend_list = User.objects.get(id=self.sender.id)
             if sender_friend_list:
-                sender_friend_list. add_friend (self.receiver)
+                sender_friend_list.add_friend(self.receiver)
                 self.is_active = False
-                self.save ()
+                self.save()
     def decline(self):
         # Decline a friend request
         self.is_active = False
