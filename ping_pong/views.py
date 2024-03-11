@@ -21,15 +21,18 @@ from django.db.models import Q
 User = get_user_model()
 
 
+class Profile(APIView):
+    def get(self, request, *args, **kwargs):
+        current_user = request.user
+        if current_user.is_authenticated:
+            return Response(UserSerializer(instance=current_user).data, status=status.HTTP_200_OK)
+        else:
+            return Response("You must be authenticated to view your profile page.", status=status.HTTP_401_UNAUTHORIZED)
 class FriendListAPIView(APIView):
     def get(self, request, *args, **kwargs):
         current_user = request.user
         if current_user.is_authenticated:
-            friend_list_data = {
-                'user': current_user.username,
-                'friends': FriendSerializer(current_user.friends.all(), many=True).data
-            }
-            return Response(friend_list_data, status=status.HTTP_200_OK)
+            return Response(FriendSerializer(current_user.friends.all(), many=True).data, status=status.HTTP_200_OK)
         else:
             return Response("You must be authenticated to view your friends.", status=status.HTTP_401_UNAUTHORIZED)
 
@@ -96,7 +99,6 @@ class   UserLogoutView(APIView):
 
 class UserUpdateView(APIView):
     permission_classes = [IsAuthenticated]
-
     def post(self, request, *args, **kwargs):
         serializer = UpdateSerializer(data=request.data)
         if serializer.is_valid():
@@ -115,14 +117,23 @@ class UserUpdateView(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class sendFriendRequest(APIView):
+class Friends(APIView):
+    def get(self, request, *args, **kwargs):
+        current_user = request.user
+        if current_user.is_authenticated:
+            return Response(FriendSerializer(current_user.friends.all(), many=True).data, status=status.HTTP_200_OK)
+        else:
+            return Response("You must be authenticated to view your friends.", status=status.HTTP_401_UNAUTHORIZED)
     def post(self, request, *args, **kwargs):
         current_user = request.user
         payload = {}
-        if request.method == "POST" and current_user.is_authenticated:
-            username = request.data.get('username')
-            if username:
-                receiver = User.objects.get(username=username)
+        if request.method == "POST" and current_user.is_authenticated and request.data.get('type') == "send":
+            try:
+                receiver = User.objects.get(username=request.data.get('username'))
+            except Exception as e:
+                payload['response'] = str(e)
+                return HttpResponse(json.dumps(payload), content_type="application/json")
+            if receiver:
                 if receiver == current_user:
                     payload['response'] = "You can't send a friend request to yourself."
                     return HttpResponse(json.dumps(payload), content_type="application/json")
@@ -153,36 +164,63 @@ class sendFriendRequest(APIView):
                     payload['response'] = "Something went wrong."
             else:
                 payload['response'] = "Unable to send a friend request"
-        else:
+        # if user is not authenticated§
+        elif not current_user.is_authenticated:
             payload['response'] = "You must be Authenticated to send a friend request"
-        return HttpResponse(json.dumps(payload), content_type="application/json")
-
-class AcceptFriendRequest(APIView):
-    # Accepting the requests
-    def post(self, request, *args, **kwargs):
-        current_user = request.user
-        payload = {}
-        receiver = User.objects.get(username=request.data.get('username'))
-        if request.method == "GET" and current_user.is_authenticated:
-            if receiver:
-                friend_request = FriendRequest(sender=current_user, receiver=receiver)
-                # friend_request = FriendRequest.objects.get(pk=request_id)
+        elif request.data.get('type') == "reply" and request.data.get('status') == "accept":
+            sender_username = request.data.get('username')
+            if request.method == "POST" and current_user.is_authenticated and sender_username:
+                sender = User.objects.get(username=sender_username)
+                try:
+                    friend_request = FriendRequest.objects.get(sender=sender, receiver=current_user, is_active=True)
+                except Exception as e:
+                    payload ['response'] = str(e)
+                    return HttpResponse(json.dumps(payload), content_type="application/json")
+                if friend_request:
+                    # Arkadaşlık isteği bulundu. Şimdi kabul edelim.
+                    friend_request.accept()
+                    payload['response'] = "Friend request accepted"
+                else:
+                    payload['response'] = "Friend request not found"
+            else:
+                payload['response'] = "You must be authenticated and provide a valid sender username to accept a friend request."
+        elif request.data.get('type') == "reply" and request.data.get('status') == "reject":
+            sender = User.objects.get(username=request.data.get('username'))
+            if request.method == "POST" and current_user.is_authenticated and sender:
+                friend_request = FriendRequest.objects.get(sender=sender, receiver=current_user)
                 # confirm that is the correct request
                 if friend_request.receiver == current_user:
                     if friend_request:
                         # found the request. Not accept it.
-                        friend_request.accept()
-                        payload ['response'] = "Friend request accepted"
+                        friend_request.decline()
+                        payload ['response'] = "Friend request declined"
                     else:
                         payload ['response'] = "Something went wrong"
                 else:
                     payload ['response'] = "That is not your request to accept."
             else:
-                payload ['response'] = "Unable to accept that friend request."
-        else:
-            payload ['response'] = "You must be authenticated to accept a friend request."
-        return HttpResponse (json.dumps(payload), content_type="application/json")
-
+                payload ['response'] = "You must be authenticated to accept a friend request."
+        elif request.data.get('type') == "remove":
+            friend = User.objects.get(username=request.data.get('username'))
+            if request.method == "POST" and current_user.is_authenticated and friend:
+                if not current_user.is_friend(friend):
+                    payload ['response'] = "He/She is not your friend"
+                else:
+                    current_user.remove_friend(friend)
+                    payload ['response'] = friend.username + " removed from your friend list"
+            else:
+                payload ['response'] = "You must be authenticated to accept a friend request."
+        elif request.data.get('type') == "unfriend":
+            friend = User.objects.get(username=request.data.get('username'))
+            if request.method == "POST" and current_user.is_authenticated and friend:
+                if not current_user.is_friend(friend):
+                    payload ['response'] = "He/She is not your friend"
+                else:
+                    current_user.unfriend(friend)
+                    payload ['response'] = friend.username + " removed from your friend list"
+            else:
+                payload ['response'] = "You must be authenticated to accept a friend request."
+        return HttpResponse(json.dumps(payload), content_type="application/json")
 
 class ViewFriendRequest(APIView):
     # Get the requests

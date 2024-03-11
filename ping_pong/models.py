@@ -26,8 +26,8 @@ class User(AbstractUser):
         remove_friend_list = self
         remove_friend_list.remove_friend(friende)
         # Remove yourself the list that belongs the person
-        friendList = User.object.get(user=friende)
-        friendList.friends.remove_friend(self.user)
+        friendList = User.objects.get(username=friende.username)
+        friendList.remove_friend(self)
     def is_friend(self, friend):
         # Check if we are friend
         if friend in self.friends.all():
@@ -52,10 +52,12 @@ class FriendRequest(models.Model):
             if sender_friend_list:
                 sender_friend_list.add_friend(self.receiver)
                 self.is_active = False
+                self.status = 'accepted'
                 self.save()
     def decline(self):
         # Decline a friend request
         self.is_active = False
+        self.status = 'rejected'
         self.save ()
     def cancel(self):
         # Cancel a friend request

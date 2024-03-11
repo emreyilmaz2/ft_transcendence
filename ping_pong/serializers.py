@@ -10,7 +10,7 @@ User = get_user_model()
 class FriendSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'last_name']
+        fields = ['id', 'username']
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -29,7 +29,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'avatar', 'friends']
+        fields = ['id', 'username','first_name', 'last_name', 'email', 'date_joined', 'avatar', 'friends']
 
 class FriendRequestSerializer(serializers.ModelSerializer):
     sender = serializers.SerializerMethodField()
