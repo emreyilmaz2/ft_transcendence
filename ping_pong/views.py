@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model, login, logout, authenticate
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import UserRegistrationSerializer, UserSerializer, UpdateSerializer, FriendRequestSerializer, FriendSerializer
+from .serializers import UserRegistrationSerializer, UserSerializer, UpdateSerializer, FriendRequestSerializer, FriendSerializer, ChangePasswordSerializer
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import User
@@ -15,6 +15,8 @@ import jwt, datetime, json
 from django.http import HttpResponse
 from .models import FriendRequest
 from django.db.models import Q
+
+from rest_framework import generics
 
 # Create your views here.
 
@@ -244,3 +246,9 @@ class ViewFriendRequest(APIView):
         else:
             payload['response'] = "You must be Authenticated to view"
         return HttpResponse(json.dumps(payload), content_type="application/json")
+    
+
+class ChangePasswordView(generics.UpdateAPIView):
+    queryset = User.objects.all()
+    permission_classes = (IsAuthenticated,)
+    serializer_class = ChangePasswordSerializer
