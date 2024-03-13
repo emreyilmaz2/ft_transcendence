@@ -8,7 +8,6 @@ urlpatterns = [
     path('logout/', UserLogoutView.as_view(), name='user-logout'),
     path('users/', ListUsersView.as_view(), name='user-list'),
     path('profile/', Profile.as_view(), name='profile'),
-    path('profile_update/', UserUpdateView.as_view(), name='profile-update'),
     path('friends/', Friends.as_view(), name='friends'),
     path('requests-pending/', ViewFriendRequest.as_view(), name='requests-pending'),
 ]

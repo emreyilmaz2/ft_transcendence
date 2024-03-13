@@ -7,3 +7,4 @@ pillow
 django-cors-headers
 PyJWT
 django-filter
+python-dotenv
