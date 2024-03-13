@@ -1,3 +1,4 @@
+#requirements for python environment
 Django==4.1.4
 djangorestframework>=3.12,<4.0
 dj-database-url>=0.5.0
