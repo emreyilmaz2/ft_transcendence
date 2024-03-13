@@ -11,6 +11,8 @@ services:
       POSTGRES_PASSWORD: p123@sqd
     ports:
       - "5433:5432"
+    networks:
+     - my-shared-network
   web:
     build: .
     command: python manage.py runserver 0.0.0.0:8000
