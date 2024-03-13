@@ -46,55 +46,43 @@ class FriendRequestSerializer(serializers.ModelSerializer):
         receiver_username = obj.receiver.username
         return f"{receiver_id} - {receiver_username}"
 
-class UpdateSerializer(serializers.Serializer):
-    name = serializers.CharField(required=False)
-    surname = serializers.CharField(required=False)
-    mail = serializers.EmailField(required=False)
-    username = serializers.CharField(required=False)
-    password1 = serializers.CharField(required=False)
-    password2 = serializers.CharField(required=False)
-
-    def validate(self, data):
-        if data.get('password1') != data.get('password2'):
-            raise serializers.ValidationError("Passwords do not match")
-        return data
-
-    def update(self, instance, validated_data):
-        instance.username = validated_data.get('username', instance.username)
-        instance.email = validated_data.get('mail', instance.email)
-        instance.first_name = validated_data.get('name', instance.first_name)
-        instance.last_name = validated_data.get('surname', instance.last_name)
-        
-        password1 = validated_data.get('password1')
-        if password1:
-            instance.set_password(password1)
-        
-        instance.save()
-        return instance
-
-
-class ChangePasswordSerializer(serializers.ModelSerializer):
+class UpdateUserSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(required=True)
     password = serializers.CharField(write_only=True, required=True, validators=[password_validation.validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
     old_password = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = User
-        fields = ('old_password', 'password', 'password2')
-
+        fields = ('username', 'first_name', 'last_name', 'email', 'old_password', 'password', 'password2')
+        extra_kwargs = {
+            'first_name': {'required': True},
+            'last_name': {'required': True},
+            'password': {'required': True},
+            'password2': {'required': True},
+            'old_password': {'required': True},
+        }
     def validate(self, attrs):
+        current_user = self.context['request'].user
         if attrs['password'] != attrs['password2']:
             raise serializers.ValidationError({"password": "Password fields didn't match."})
-
-        return attrs
-
-    def validate_old_password(self, value):
-        current_user = self.context['request'].user
-        if not current_user.check_password(value):
+        elif User.objects.exclude(pk=current_user.pk).filter(email=attrs['email']).exists():
+            raise serializers.ValidationError({"email": "This email is already in use."})
+        elif User.objects.exclude(pk=current_user.pk).filter(username=attrs['username']).exists():
+            raise serializers.ValidationError({"username": "This username is already in use."})
+        elif not current_user.check_password(attrs['old_password']):
             raise serializers.ValidationError({"old_password": "Old password is not correct"})
-        return value
-
+        return attrs
+    
     def update(self, instance, validated_data):
+        user = self.context['request'].user
+        if user.pk != instance.pk:
+            raise serializers.ValidationError({"authorize": "You dont have permission for this user."})
+        instance.first_name = validated_data['first_name']
+        instance.last_name = validated_data['last_name']
+        instance.email = validated_data['email']
+        instance.username = validated_data['username']
         instance.set_password(validated_data['password'])
+        instance.has_logged_in = False
         instance.save()
         return instance

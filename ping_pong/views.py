@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model, login, logout, authenticate
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import UserRegistrationSerializer, UserSerializer, UpdateSerializer, FriendRequestSerializer, FriendSerializer, ChangePasswordSerializer
+from .serializers import UserRegistrationSerializer, UserSerializer, UpdateUserSerializer, FriendRequestSerializer, FriendSerializer
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import User
@@ -23,13 +23,26 @@ from rest_framework import generics
 User = get_user_model()
 
 
-class Profile(APIView):
+class Profile(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+    # Kullanicin profil bilgilerine erismesi icin kullanilir
     def get(self, request, *args, **kwargs):
         current_user = request.user
         if current_user.is_authenticated:
             return Response(UserSerializer(instance=current_user).data, status=status.HTTP_200_OK)
         else:
             return Response("You must be authenticated to view your profile page.", status=status.HTTP_401_UNAUTHORIZED)
+    # Kullanicin profil bilgilerini guncellemesi icin kullanilir
+    def patch(self, request, *args, **kwargs):
+        queryset = User.objects.all()
+        permission_classes = (IsAuthenticated)
+        current_user = request.user
+        serializer = UpdateUserSerializer(instance=current_user, data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response("Profile updated successfully", status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class FriendListAPIView(APIView):
     def get(self, request, *args, **kwargs):
         current_user = request.user
@@ -246,9 +259,3 @@ class ViewFriendRequest(APIView):
         else:
             payload['response'] = "You must be Authenticated to view"
         return HttpResponse(json.dumps(payload), content_type="application/json")
-    
-
-class ChangePasswordView(generics.UpdateAPIView):
-    queryset = User.objects.all()
-    permission_classes = (IsAuthenticated,)
-    serializer_class = ChangePasswordSerializer
