@@ -24,5 +24,11 @@ services:
       - DATABASE_URL=${DATABASE_URL}
     depends_on:
       - db
+    networks:
+     - my-shared-network
 volumes:
   postgres_data:
+
+networks:
+  my-shared-network:
+    external: true
