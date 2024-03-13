@@ -114,4 +114,5 @@ AUTH_USER_MODEL = 'ping_pong.User'
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:63342',
+    'http://localhost:8000',
 ]
