@@ -119,8 +119,8 @@ class UserUpdateView(APIView):
         if serializer.is_valid():
             username = serializer.validated_data.get('username')
             password = serializer.validated_data.get('password')
-
-            user = request.user  # Assuming user is authenticated
+            # Assuming user is authenticated
+            user = request.user
             if user:
                 # Update user object
                 user.username = username
