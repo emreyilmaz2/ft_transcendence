@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from django.contrib.auth import authenticate, password_validation
 from .models import FriendRequest
+from django.conf import settings
 from django.contrib.auth.models import User
 
 User = get_user_model()
@@ -46,15 +47,17 @@ class FriendRequestSerializer(serializers.ModelSerializer):
         receiver_username = obj.receiver.username
         return f"{receiver_id} - {receiver_username}"
 
+
 class UpdateUserSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)
     password = serializers.CharField(write_only=True, required=True, validators=[password_validation.validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
     old_password = serializers.CharField(write_only=True, required=True)
+    avatar = serializers.ImageField(required=False)
 
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email', 'old_password', 'password', 'password2')
+        fields = ('username', 'first_name', 'last_name', 'email', 'old_password', 'password', 'password2', 'avatar')
         extra_kwargs = {
             'first_name': {'required': True},
             'last_name': {'required': True},
@@ -62,27 +65,38 @@ class UpdateUserSerializer(serializers.ModelSerializer):
             'password2': {'required': True},
             'old_password': {'required': True},
         }
+
     def validate(self, attrs):
         current_user = self.context['request'].user
-        if attrs['password'] != attrs['password2']:
+        if attrs.get('password') != attrs.get('password2'):
             raise serializers.ValidationError({"password": "Password fields didn't match."})
-        elif User.objects.exclude(pk=current_user.pk).filter(email=attrs['email']).exists():
+        elif User.objects.exclude(pk=current_user.pk).filter(email=attrs.get('email')).exists():
             raise serializers.ValidationError({"email": "This email is already in use."})
-        elif User.objects.exclude(pk=current_user.pk).filter(username=attrs['username']).exists():
+        elif User.objects.exclude(pk=current_user.pk).filter(username=attrs.get('username')).exists():
             raise serializers.ValidationError({"username": "This username is already in use."})
-        elif not current_user.check_password(attrs['old_password']):
+        elif 'old_password' in attrs and not current_user.check_password(attrs['old_password']):
             raise serializers.ValidationError({"old_password": "Old password is not correct"})
         return attrs
-    
+
     def update(self, instance, validated_data):
         user = self.context['request'].user
         if user.pk != instance.pk:
             raise serializers.ValidationError({"authorize": "You dont have permission for this user."})
+        
+        # Update standard user fields
         instance.first_name = validated_data['first_name']
         instance.last_name = validated_data['last_name']
         instance.email = validated_data['email']
         instance.username = validated_data['username']
-        instance.set_password(validated_data['password'])
         instance.has_logged_in = False
+        
+        if 'avatar' in validated_data:
+            instance.avatar = validated_data['avatar']
+        else:
+            instance.avatar = settings.DEFAULT_USER_AVATAR
+
+        if 'password' in validated_data:
+            instance.set_password(validated_data['password'])
+        
         instance.save()
         return instance

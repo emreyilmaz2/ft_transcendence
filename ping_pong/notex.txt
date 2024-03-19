@@ -1,4 +1,4 @@
-#CSRF NEDIR
+    #CSRF NEDIR
 CSRF (Cross-Site Request Forgery), genellikle "session riding" veya "one-click attack" olarak da adlandırılan bir saldırı türüdür.
 Bu saldırı türünde, bir kullanıcının tarayıcısında oturum açıkken, kötü niyetli bir saldırganın kontrolündeki
 başka bir web sitesi veya içerik, kullanıcının adına istekler gönderir.
