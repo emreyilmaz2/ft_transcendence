@@ -10,4 +10,6 @@ urlpatterns = [
     path('profile/', Profile.as_view(), name='profile'),
     path('friends/', Friends.as_view(), name='friends'),
     path('requests-pending/', ViewFriendRequest.as_view(), name='requests-pending'),
+
+    path('images/<str:image_name>', views.get_image, name='get_image'),
 ]

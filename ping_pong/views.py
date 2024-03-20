@@ -15,14 +15,21 @@ import jwt, datetime, json
 from django.http import HttpResponse
 from .models import FriendRequest
 from django.db.models import Q
-
 from rest_framework import generics
+from rest_framework_simplejwt.tokens import RefreshToken
 
+from django.views.decorators.csrf import csrf_exempt
 # Create your views here.
 
 User = get_user_model()
 
+def get_image(request, image_name):
+    # Resmin dosya yolu
+    image_path = os.path.join(settings.BASE_DIR, 'static/images', image_name)
 
+    # Resmi HTTP yanıtı olarak gönder
+    return FileResponse(open(image_path, 'rb'), content_type='image/jpeg')
+    
 class Profile(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
     # Kullanicin profil bilgilerine erismesi icin kullanilir
@@ -73,64 +80,75 @@ class UserRegistrationView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class UserLoginView(APIView):
+    @csrf_exempt
     def post(self, request, *args, **kwargs):
         username = request.data.get('username')
         password = request.data.get('password')
-        if not username or not password: # Eger sifre veya username eksik ise giris yapmamali
+        if not username or not password:
             return Response({'error': 'Kullanıcı adı ve şifre gerekli'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        user = authenticate(username=username, password=password)
-        if user is not None and not user.has_logged_in:
-            login(request, user)  # Kullanıcıyı oturum aç
-            user.has_logged_in = True
-            user.save()  # Kullanıcıyı kaydet
-
-            payload = {
-                'id': user.id,
-                'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
-                'iat': datetime.datetime.utcnow()
+        current_user = authenticate(username=username, password=password)
+        # Kullanici dogrulandi ve oturum acmadi ise
+        if current_user.is_authenticated and not current_user.has_logged_in:
+            login(request, current_user)
+            current_user.has_logged_in = True
+            current_user.save()
+            #Jwt token creation
+            refresh = RefreshToken.for_user(current_user)
+            token = {
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
             }
-            token = jwt.encode(payload, 'secret', algorithm='HS256')
-            response = Response()
-            response.set_cookie(key='jwt', value=token, httponly=True)
-            response.data = token
-            return response
-        elif user is not None and user.has_logged_in:
-            return Response({'error': 'Kullanıcı zaten oturum açmış'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(token, status=status.HTTP_200_OK)
+        # Kullanici dogrulandi ve oturum acmis ise
+        elif current_user is not None and current_user.has_logged_in:
+            login(request, current_user)
+            current_user.has_logged_in = True
+            current_user.save()
+            
+            refresh = RefreshToken.for_user(current_user)
+            token = {
+                'error': 'Kullanıcı zaten oturum açmış',
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            }
+            return Response(token, status=status.HTTP_400_BAD_REQUEST)
+        # Kullanici dogrulanamamis ise
         else:
             return Response({'error': 'Geçersiz kimlik bilgileri'}, status=status.HTTP_400_BAD_REQUEST)
 
-class   UserLogoutView(APIView):
+class UserLogoutView(APIView):
     def post(self, request, *args, **kwargs):
-        username = request.data.get('username')
-        password = request.data.get('password')
-        user = authenticate(username=username, password=password)
-        if not user.is_authenticated or not user.has_logged_in:
-            return Response({"message": "Çıkış yapmak için önce giriş yapmalısınız."}, status=status.HTTP_401_UNAUTHORIZED)
-        logout(request)
-        user.has_logged_in = False
-        user.save()
-        return Response({"message": "Başarılı çıkış."}, status=status.HTTP_200_OK)
-
-class UserUpdateView(APIView):
-    permission_classes = [IsAuthenticated]
-    def post(self, request, *args, **kwargs):
-        serializer = UpdateSerializer(data=request.data)
-        if serializer.is_valid():
-            username = serializer.validated_data.get('username')
-            password = serializer.validated_data.get('password')
-            # Assuming user is authenticated
-            user = request.user
-            if user:
-                # Update user object
-                user.username = username
-                user.set_password(password)
-                user.save()
-                return Response({'message': 'User information updated successfully'}, status=status.HTTP_200_OK)
-            else:
-                return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        current_user = request.user
+        if current_user.is_authenticated:
+            if not current_user.has_logged_in:
+                return Response({"message": "Zaten oturum açmış değilsiniz."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            logout(request)
+            current_user.has_logged_in = False
+            current_user.save()
+            return Response({"message": "Başarılı çıkış."}, status=status.HTTP_200_OK)
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Authenticate olmayan kullanıcı çıkış yapamaz"}, status=status.HTTP_400_BAD_REQUEST)
+
+# class UserUpdateView(APIView):
+#     permission_classes = [IsAuthenticated]
+#     def post(self, request, *args, **kwargs):
+#         serializer = UpdateSerializer(data=request.data)
+#         if serializer.is_valid():
+#             username = serializer.validated_data.get('username')
+#             password = serializer.validated_data.get('password')
+#             # Assuming user is authenticated
+#             user = request.user
+#             if user:
+#                 # Update user object
+#                 user.username = username
+#                 user.set_password(password)
+#                 user.save()
+#                 return Response({'message': 'User information updated successfully'}, status=status.HTTP_200_OK)
+#             else:
+#                 return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+#         else:
+#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class Friends(APIView):
     def get(self, request, *args, **kwargs):
