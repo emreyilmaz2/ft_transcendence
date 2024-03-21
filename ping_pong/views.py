@@ -88,7 +88,7 @@ class UserLoginView(APIView):
             return Response({'error': 'Kullanıcı adı ve şifre gerekli'}, status=status.HTTP_400_BAD_REQUEST)
         current_user = authenticate(username=username, password=password)
         # Kullanici dogrulandi ve oturum acmadi ise
-        if current_user.is_authenticated and not current_user.has_logged_in:
+        if current_user is not None and current_user.is_authenticated and not current_user.has_logged_in:
             login(request, current_user)
             current_user.has_logged_in = True
             current_user.save()
@@ -111,7 +111,7 @@ class UserLoginView(APIView):
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
             }
-            return Response(token, status=status.HTTP_400_BAD_REQUEST)
+            return Response(token, status=status.HTTP_200_OK)
         # Kullanici dogrulanamamis ise
         else:
             return Response({'error': 'Geçersiz kimlik bilgileri'}, status=status.HTTP_400_BAD_REQUEST)
