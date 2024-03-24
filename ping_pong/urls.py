@@ -9,7 +9,6 @@ urlpatterns = [
     path('users/', ListUsersView.as_view(), name='user-list'),
     path('profile/', Profile.as_view(), name='profile'),
     path('friends/', Friends.as_view(), name='friends'),
-    path('requests-pending/', ViewFriendRequest.as_view(), name='requests-pending'),
-
+    path('pending-requests/', ViewFriendRequest.as_view(), name='pending-requests'),
     path('images/<str:image_name>', views.get_image, name='get_image'),
 ]

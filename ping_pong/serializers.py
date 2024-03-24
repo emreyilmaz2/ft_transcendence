@@ -10,7 +10,7 @@ User = get_user_model()
 class FriendSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username']
+        fields = ['id', 'username', 'has_logged_in']
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -38,24 +38,35 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username','first_name', 'last_name', 'email', 'date_joined', 'avatar', 'friends']
+        fields = ['id', 'username','first_name', 'last_name', 'email', 'date_joined', 'avatar', 'friends', 'has_logged_in']
 
 class FriendRequestSerializer(serializers.ModelSerializer):
+    user_role = serializers.SerializerMethodField()
     sender = serializers.SerializerMethodField()
     receiver = serializers.SerializerMethodField()
+
     class Meta:
         model = FriendRequest
-        fields = ['id', 'sender', 'receiver', 'status', 'timestamp']
+        fields = ['id', 'sender', 'receiver', 'user_role', 'status', 'timestamp']
 
+    def get_user_role(self, obj):
+        current_user_id = self.context['request'].user.id
+        if obj.sender.id == current_user_id:
+            return 'sender'
+        elif obj.receiver.id == current_user_id:
+            return 'receiver'
+        else:
+            return 'unknown'
     def get_sender(self, obj):
-        sender_id = obj.sender.id
+        # sender_id = obj.sender.id
         sender_username = obj.sender.username
-        return f"{sender_id} - {sender_username}"
+        # return f"{sender_id} - {sender_username}"
+        return sender_username
     def get_receiver(self, obj):
-        receiver_id = obj.receiver.id
+        # receiver_id = obj.receiver.id
         receiver_username = obj.receiver.username
-        return f"{receiver_id} - {receiver_username}"
-
+        # return f"{receiver_id} - {receiver_username}"
+        return receiver_username
 
 class UpdateUserSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)

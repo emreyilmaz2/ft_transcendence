@@ -18,6 +18,10 @@ from django.db.models import Q
 from rest_framework import generics
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from rest_framework.filters import SearchFilter
+from django.db.models import OuterRef, Subquery, Q
+
+
 from django.views.decorators.csrf import csrf_exempt
 # Create your views here.
 
@@ -58,18 +62,30 @@ class FriendListAPIView(APIView):
         else:
             return Response("You must be authenticated to view your friends.", status=status.HTTP_401_UNAUTHORIZED)
 
-class ListUsersView(ListAPIView):
-    serializer_class = UserSerializer
+
+class ListUsersView(APIView):
     permission_classes = [IsAuthenticated]
-    def get_queryset(self):
-        # Giriş yapmış olan kullanıcının ID'sini al
-        current_user_id = self.request.user.id
-        return User.objects.exclude(id=current_user_id)
-    
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    filter_backends = [django_filters.rest_framework.DjangoFilterBackend, OrderingFilter]
-    filterset_class = UserFilter
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        username = request.query_params.get('searchTerm', '')
+        # Gönderilen ve alınan arkadaşlık istekleri için kullanıcıların username'lerini al
+        sent_friend_requests = FriendRequest.objects.filter(sender=user).values_list('receiver__username', flat=True)
+        received_friend_requests = FriendRequest.objects.filter(receiver=user).values_list('sender__username', flat=True)
+        # Gönderilen ve alınan isteklerdeki tüm unique kullanıcı username'lerini birleştir
+        users_to_exclude = set(list(sent_friend_requests) + list(received_friend_requests))
+        # Kullanıcıları filtrele
+        if username:
+            # Eğer arama terimi varsa, bu terime göre filtrele
+            users = User.objects.filter(username__icontains=username)
+        else:
+            # Eğer arama terimi yoksa, tüm kullanıcıları al
+            users = User.objects.all()
+        # Mevcut kullanıcı ve arkadaşlık isteği ilişkili kullanıcıları dışla
+        users = users.exclude(username__in=users_to_exclude).exclude(username=user.username)
+        # Serileştir ve yanıtla
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data)
 
 class UserRegistrationView(APIView):
     def post(self, request, *args, **kwargs):
@@ -122,7 +138,6 @@ class UserLogoutView(APIView):
         if current_user.is_authenticated:
             if not current_user.has_logged_in:
                 return Response({"message": "Zaten oturum açmış değilsiniz."}, status=status.HTTP_400_BAD_REQUEST)
-            
             logout(request)
             current_user.has_logged_in = False
             current_user.save()
@@ -130,31 +145,15 @@ class UserLogoutView(APIView):
         else:
             return Response({"message": "Authenticate olmayan kullanıcı çıkış yapamaz"}, status=status.HTTP_400_BAD_REQUEST)
 
-# class UserUpdateView(APIView):
-#     permission_classes = [IsAuthenticated]
-#     def post(self, request, *args, **kwargs):
-#         serializer = UpdateSerializer(data=request.data)
-#         if serializer.is_valid():
-#             username = serializer.validated_data.get('username')
-#             password = serializer.validated_data.get('password')
-#             # Assuming user is authenticated
-#             user = request.user
-#             if user:
-#                 # Update user object
-#                 user.username = username
-#                 user.set_password(password)
-#                 user.save()
-#                 return Response({'message': 'User information updated successfully'}, status=status.HTTP_200_OK)
-#             else:
-#                 return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-#         else:
-#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 class Friends(APIView):
     def get(self, request, *args, **kwargs):
+        username = request.query_params.get('searchTerm')
         current_user = request.user
+        current_friends = request.user.friends
         if current_user.is_authenticated:
-            return Response(FriendSerializer(current_user.friends.all(), many=True).data, status=status.HTTP_200_OK)
+            if(username):
+                current_friends = current_user.friends.filter(username__icontains=username)
+            return Response(FriendSerializer(current_friends, many=True).data, status=status.HTTP_200_OK)
         else:
             return Response("You must be authenticated to view your friends.", status=status.HTTP_401_UNAUTHORIZED)
     def post(self, request, *args, **kwargs):
@@ -226,6 +225,7 @@ class Friends(APIView):
                     if friend_request:
                         # found the request. Not accept it.
                         friend_request.decline()
+                        friend_request.delete() # Arkadaşlık isteğini sil
                         payload ['response'] = "Friend request declined"
                     else:
                         payload ['response'] = "Something went wrong"
@@ -260,20 +260,22 @@ class ViewFriendRequest(APIView):
     def get(self, request, *args, **kwargs):
         payload = {}
         user = request.user
+        searchTerm = request.query_params.get('searchTerm')
         if user.is_authenticated:
-            current_user = User.objects.get(pk=user.id)
-            if current_user == user:
-                friend_requests_sent = FriendRequest.objects.filter(sender=user, status='pending')
-                friend_requests_received = FriendRequest.objects.filter(receiver=user, status='pending')
-                
-                # Hem gönderilen hem de alınan istekleri birleştirin
-                friend_requests = friend_requests_sent | friend_requests_received
-                
-                # Serializer kullanarak JSON'a dönüştürme
-                serializer = FriendRequestSerializer(friend_requests, many=True)
-                payload['friend_requests'] = serializer.data
-            else:
-                payload['response'] = "You can't view another users friend requests."
+            # Q nesnelerini kullanarak karmaşık sorguyu oluştur
+            query = Q(sender=user, status='pending') | Q(sender=user, status='rejected') | \
+                    Q(receiver=user, status='pending') | Q(receiver=user, status='rejected')
+            
+            # Eğer bir arama terimi varsa, sorguya ek filtreleme kriterleri ekle
+            if searchTerm:
+                query &= (Q(sender__username__icontains=searchTerm) | Q(receiver__username__icontains=searchTerm))
+
+            friend_requests = FriendRequest.objects.filter(query).distinct()
+
+            # Serializer'ı kullanarak JSON'a dönüştür
+            serializer = FriendRequestSerializer(friend_requests, many=True, context={'request': request})
+            payload['friend_requests'] = serializer.data
         else:
             payload['response'] = "You must be Authenticated to view"
+        
         return HttpResponse(json.dumps(payload), content_type="application/json")
