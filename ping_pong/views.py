@@ -51,7 +51,9 @@ class Profile(generics.UpdateAPIView):
         serializer = UpdateUserSerializer(instance=current_user, data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
-            return Response("Profile updated successfully", status=status.HTTP_200_OK)
+            return Response(UserSerializer(instance=current_user).data, status=status.HTTP_200_OK)
+            # return Response("Profile updated successfully", status=status.HTTP_200_OK)
+            # Niran guncelleme yapildiktan sonra kullanici bilgilerinin dondurulmesini istedigi icin degistirildi
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class FriendListAPIView(APIView):
