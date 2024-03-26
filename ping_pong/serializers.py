@@ -29,7 +29,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             username=validated_data['username'],
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
-            email=validated_data['email']
+            email=validated_data['email'],
+            avatar=settings.DEFAULT_USER_AVATAR
         )
         user.set_password(validated_data['password'])
         user.save()
@@ -112,8 +113,8 @@ class UpdateUserSerializer(serializers.ModelSerializer):
         
         if 'avatar' in validated_data:
             instance.avatar = validated_data['avatar']
-        else:
-            instance.avatar = settings.DEFAULT_USER_AVATAR
+        # else:
+        #     instance.avatar = settings.DEFAULT_USER_AVATAR
 
         if 'password' in validated_data:
             instance.set_password(validated_data['password'])
