@@ -281,3 +281,61 @@ class ViewFriendRequest(APIView):
             payload['response'] = "You must be Authenticated to view"
         
         return HttpResponse(json.dumps(payload), content_type="application/json")
+
+@csrf_exempt
+def account42(request):
+    if request.method == 'POST':
+        jsecuritykey="NULL"
+        data = json.loads(request.body)
+        authorization_code = data.get('code')  # Frontend'den gelen yetkilendirme kodu
+        if authorization_code:
+            # Yetkilendirme kodunu kullanarak access_token al
+            token_url = 'https://api.intra.42.fr/oauth/token'
+            client_id = 'u-s4t2ud-262a8761a2528a18493301dcd0b753108abb14aaba5b7e6aee13fc117b072fc2'
+            client_secret = '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'
+            redirect_uri = 'http://localhost:8080'
+            grant_type = 'authorization_code'
+            
+            token_data = {
+                'grant_type': grant_type,
+                'client_id': client_id,
+                'client_secret': client_secret,
+                'code': authorization_code,
+                'redirect_uri': redirect_uri
+            }
+            token_response = requests.post(token_url, data=token_data)
+            if token_response.status_code == 200:
+                token_info = token_response.json()
+                access_token = token_info.get('access_token')
+
+                # Access token ile kullanıcı bilgilerini al
+                user_info_url = 'https://api.intra.42.fr/v2/me'
+                headers = {'Authorization': f'Bearer {access_token}'}
+                user_response = requests.get(user_info_url, headers=headers)
+                
+                if user_response.status_code == 200:
+                    user_data = user_response.json()
+                    user_exists = users.objects.filter(username=user_data['login']).exists()# Kullanıcı adıyla veritabanını kontrol et eğer bu kullanıcı yoksa veritabanına kaydet.
+                    if not user_exists:
+                        jsecuritykey=generate_random_string()
+                        users.objects.create(
+                        username=user_data['login'],
+                        name=user_data['first_name'],
+                        surname=user_data['last_name'],
+                        email=user_data['email'],
+                        profile_image = user_data['image']['link'],
+                        securitykey= jsecuritykey
+                    )
+                        return JsonResponse({'securitykey': jsecuritykey,'username': user_data['login'], 'name': user_data['first_name'], 'surname': user_data['last_name'], 'email': user_data['email'], 'profile_image': user_data['image']['link']})
+                    else:
+                        user = users.objects.get(username=user_data['login'])
+                        return JsonResponse({'securitykey': user.securitykey,'username': user.username, 'name': user.name, 'surname': user.surname, 'email': user.email, 'profile_image': user.profile_image})
+                else:
+                    return JsonResponse({'error': 'Failed to fetch user data', 'status_code': user_response.status_code})
+            else:
+                return JsonResponse({'error': 'Failed to obtain access token', 'status_code': token_response.status_code})
+        else:
+            return JsonResponse({'error': 'No authorization code provided'})
+
+    else:
+        return JsonResponse({'error': 'Invalid request method'})

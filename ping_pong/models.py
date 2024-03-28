@@ -8,6 +8,10 @@ class User(AbstractUser):
     avatar = models.ImageField(upload_to='images/', null=True, blank=True)  # Örnek bir avatar alanı
     friends = models.ManyToManyField('User', related_name='user_friends', blank=True)
     has_logged_in = models.BooleanField(default=False)
+    matches = models.ManyToManyField('Match', related_name='player_matches', blank=True)
+
+    def get_match_history(self):
+        return self.matches.all()
     
     def __str__(self):
         return self.username
@@ -63,3 +67,13 @@ class FriendRequest(models.Model):
         # Cancel a friend request
         self.is_active = False
         self.save ()
+
+class Match(models.Model):
+    player1 = models.CharField(max_length=100) # Kullanıcı adı veya konuk oyuncu adı
+    player2 = models.CharField(max_length=100)
+    score = models.CharField(max_length=10)
+    result = models.CharField(max_length=10, choices=[('win', 'Win'), ('loss', 'Loss'), ('draw', 'Draw')])
+    match_date = models.DateField()
+    
+    def __str__(self):
+        return f"{self.player1} vs {self.player2} | {self.score} | {self.result} | {self.match_date}"

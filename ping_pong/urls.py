@@ -1,6 +1,6 @@
 from django.urls import path
 from .import views
-from .views import UserRegistrationView, UserLoginView, UserLogoutView, ListUsersView, Friends, ViewFriendRequest, FriendListAPIView, Profile
+from .views import UserRegistrationView, UserLoginView, UserLogoutView, ListUsersView, Friends, ViewFriendRequest, FriendListAPIView, Profile, account42
 
 urlpatterns = [
     path('register/', UserRegistrationView.as_view(), name='user-register'),
@@ -11,4 +11,5 @@ urlpatterns = [
     path('friends/', Friends.as_view(), name='friends'),
     path('pending-requests/', ViewFriendRequest.as_view(), name='pending-requests'),
     path('images/<str:image_name>', views.get_image, name='get_image'),
+    path('42-api/', account42, name='account42'),
 ]
