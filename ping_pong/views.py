@@ -41,31 +41,37 @@ def get_image(request, image_name):
 class SendOTPView(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request, *args, **kwargs):
-        auth_header = request.headers.get('Authorization')
-        if auth_header:
-            # Authorization: Bearer your_token_here
-            token = auth_header.split(' ')[1]  # Bearer kelimesinden sonra gelen token'ı al
-        else:
-            return Response({'message': 'Your token is not received'}, status=status.HTTP_400_NOT_FOUND)
-        
-        decoded_token = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
-        user_id = decoded_token.get("user_id")
-        current_user = User.objects.get(id=user_id)
-        try:
-            otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
-            current_user.otp = otp
-            current_user.save()
-
-            send_mail(
-                'Your OTP',
-                f'Your OTP is: {otp}',
-                'busemre999@gmail.com',
-                [current_user.email],
-                fail_silently=False,
-            )
-            return Response({'message': 'OTP sent to your email', 'otp':otp}, status=status.HTTP_200_OK)
-        except User.DoesNotExist:
-            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        if (request.method == "POST" and request.data.get('type') == "send"):
+            auth_header = request.headers.get('Authorization')
+            if auth_header:
+                # Authorization: Bearer your_token_here
+                token = auth_header.split(' ')[1]  # Bearer kelimesinden sonra gelen token'ı al
+            else:
+                return Response({'message': 'Your token is not received'}, status=status.HTTP_400_NOT_FOUND)
+            decoded_token = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+            user_id = decoded_token.get("user_id")
+            current_user = User.objects.get(id=user_id)
+            try:
+                otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+                current_user.otp = otp
+                current_user.save()
+                send_mail(
+                    'Your OTP',
+                    f'Your OTP is: {otp}',
+                    'busemre999@gmail.com',
+                    [current_user.email],
+                    fail_silently=False,
+                )
+                return Response({'message': 'OTP sent to your email'}, status=status.HTTP_200_OK)
+            except User.DoesNotExist:
+                return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        elif (request.method == "POST" and request.data.get('type') == "verify"):
+            current_user = request.user
+            code_to_verify = request.data.get('code')
+            if(current_user.otp == code_to_verify):
+                return Response({'status': 'Success!'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'status': 'Correct!'}, status=status.HTTP_404_NOT_FOUND)
 
 class Profile(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
