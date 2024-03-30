@@ -71,26 +71,22 @@ class FriendRequestSerializer(serializers.ModelSerializer):
 
 class UpdateUserSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)
-    password = serializers.CharField(write_only=True, required=True, validators=[password_validation.validate_password])
-    password2 = serializers.CharField(write_only=True, required=True)
-    old_password = serializers.CharField(write_only=True, required=True)
+    password = serializers.CharField(required=False, write_only=True, validators=[password_validation.validate_password])
+    password2 = serializers.CharField(required=False, write_only=True)
+    old_password = serializers.CharField(required=True, write_only=True)
     avatar = serializers.ImageField(required=False)
 
     class Meta:
         model = User
         fields = ('username', 'first_name', 'last_name', 'email', 'old_password', 'password', 'password2', 'avatar')
-        extra_kwargs = {
-            'first_name': {'required': True},
-            'last_name': {'required': True},
-            # 'password': {'required': True},
-            # 'password2': {'required': True},
-            # 'old_password': {'required': True},
-        }
 
     def validate(self, attrs):
         current_user = self.context['request'].user
-        if attrs.get('password') != attrs.get('password2'):
-            raise serializers.ValidationError({"password": "Password fields didn't match."})
+        password = attrs.get('password')
+        password2 = attrs.get('password2')
+        if password is not None and password2 is not None:
+            if password != password2:
+                raise serializers.ValidationError({"password": "Password fields didn't match."})
         elif User.objects.exclude(pk=current_user.pk).filter(email=attrs.get('email')).exists():
             raise serializers.ValidationError({"email": "This email is already in use."})
         elif User.objects.exclude(pk=current_user.pk).filter(username=attrs.get('username')).exists():

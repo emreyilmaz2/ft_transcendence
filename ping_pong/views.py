@@ -20,9 +20,13 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from rest_framework.filters import SearchFilter
 from django.db.models import OuterRef, Subquery, Q
+from django.conf import settings
+import random
+
 
 
 from django.views.decorators.csrf import csrf_exempt
+from django.core.mail import send_mail
 # Create your views here.
 
 User = get_user_model()
@@ -33,7 +37,36 @@ def get_image(request, image_name):
 
     # Resmi HTTP yanıtı olarak gönder
     return FileResponse(open(image_path, 'rb'), content_type='image/jpeg')
-    
+
+class SendOTPView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request, *args, **kwargs):
+        auth_header = request.headers.get('Authorization')
+        if auth_header:
+            # Authorization: Bearer your_token_here
+            token = auth_header.split(' ')[1]  # Bearer kelimesinden sonra gelen token'ı al
+        else:
+            return Response({'message': 'Your token is not received'}, status=status.HTTP_400_NOT_FOUND)
+        
+        decoded_token = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        user_id = decoded_token.get("user_id")
+        current_user = User.objects.get(id=user_id)
+        try:
+            otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+            current_user.otp = otp
+            current_user.save()
+
+            send_mail(
+                'Your OTP',
+                f'Your OTP is: {otp}',
+                'busemre999@gmail.com',
+                [current_user.email],
+                fail_silently=False,
+            )
+            return Response({'message': 'OTP sent to your email', 'otp':otp}, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
 class Profile(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
     # Kullanicin profil bilgilerine erismesi icin kullanilir
@@ -55,15 +88,6 @@ class Profile(generics.UpdateAPIView):
             # return Response("Profile updated successfully", status=status.HTTP_200_OK)
             # Niran guncelleme yapildiktan sonra kullanici bilgilerinin dondurulmesini istedigi icin degistirildi
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class FriendListAPIView(APIView):
-    def get(self, request, *args, **kwargs):
-        current_user = request.user
-        if current_user.is_authenticated:
-            return Response(FriendSerializer(current_user.friends.all(), many=True).data, status=status.HTTP_200_OK)
-        else:
-            return Response("You must be authenticated to view your friends.", status=status.HTTP_401_UNAUTHORIZED)
-
 
 class ListUsersView(APIView):
     permission_classes = [IsAuthenticated]
@@ -138,8 +162,8 @@ class UserLogoutView(APIView):
     def post(self, request, *args, **kwargs):
         current_user = request.user
         if current_user.is_authenticated:
-            if not current_user.has_logged_in:
-                return Response({"message": "Zaten oturum açmış değilsiniz."}, status=status.HTTP_400_BAD_REQUEST)
+            # if not current_user.has_logged_in:
+            #     return Response({"message": "Zaten oturum açmış değilsiniz."}, status=status.HTTP_400_BAD_REQUEST)
             logout(request)
             current_user.has_logged_in = False
             current_user.save()
@@ -151,7 +175,7 @@ class Friends(APIView):
     def get(self, request, *args, **kwargs):
         username = request.query_params.get('searchTerm')
         current_user = request.user
-        current_friends = request.user.friends
+        current_friends = request.user.friends 
         if current_user.is_authenticated:
             if(username):
                 current_friends = current_user.friends.filter(username__icontains=username)

@@ -13,11 +13,18 @@ SECRET_KEY = 'django-insecure-&b$8w-#+ocy+@c96!kx_z3*6n6o=kv(gjnv%6_1rpd^4my(6a_
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
 ALLOWED_HOSTS = ['*']
 
-# Application definition
+#Email send two factor authentication
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com' # Eğer Gmail kullanıyorsanız
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'busemre999@gmail.com'
+EMAIL_HOST_PASSWORD = 'ayra xksr olvm gbep'
 
+
+# Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',

@@ -9,10 +9,10 @@ class User(AbstractUser):
     friends = models.ManyToManyField('User', related_name='user_friends', blank=True)
     has_logged_in = models.BooleanField(default=False)
     matches = models.ManyToManyField('Match', related_name='player_matches', blank=True)
+    otp = models.CharField(max_length=6, blank=True, null=True)
 
     def get_match_history(self):
         return self.matches.all()
-    
     def __str__(self):
         return self.username
     def add_friend(self, friend):
