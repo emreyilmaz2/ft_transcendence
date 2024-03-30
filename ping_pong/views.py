@@ -71,7 +71,7 @@ class SendOTPView(APIView):
             if(current_user.otp == code_to_verify):
                 return Response({'status': 'Success!'}, status=status.HTTP_200_OK)
             else:
-                return Response({'status': 'Correct!'}, status=status.HTTP_404_NOT_FOUND)
+                return Response({'status': 'Failure!'}, status=status.HTTP_404_NOT_FOUND)
 
 class Profile(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
