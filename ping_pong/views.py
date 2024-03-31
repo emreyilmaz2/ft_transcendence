@@ -74,7 +74,7 @@ class SendOTPView(APIView):
                 return Response({'status': 'Success!'}, status=status.HTTP_200_OK)
                 current_user_otp.delete()
             else:
-                return Response({'status': 'Failure!'}, status=status.HTTP_404_NOT_FOUND)
+                return Response({'status': 'Failure!'}, status=status.HTTP_400_BAD_REQUEST)
 
 class Profile(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
@@ -315,6 +315,18 @@ class ViewFriendRequest(APIView):
         
         return HttpResponse(json.dumps(payload), content_type="application/json")
 
+class MatchView(APIView):
+    def get(self, request, args, **kwargs):
+        matches = Match.objects.all()
+        serializer = MatchSerializer(matches, many=True)
+        return Response(serializer.data)
+    def post(self, request,args, **kwargs):
+        serializer = MatchSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
     return {
@@ -373,21 +385,15 @@ def account42(request):
         if not authorization_code:
             return Response({'error': 'No authorization code provided'}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            print('test0')
             token_info = exchange_code_for_token(authorization_code)
-            print('test1')
             user_info = get_user_info(token_info['access_token'])
-            print('test2')
             user = get_or_create_user(user_info)
-            print('test3')
             #Jwt token creation
             tokens = get_tokens_for_user(user)
-            print('test4')
             token = {
                 # 'refresh': tokens['refresh'],
                 'accessToken': tokens['access'],
             }
-            print('test5')
             return Response(token, status=status.HTTP_200_OK)
         except requests.RequestException as e:
             return Response({'error': 'Failed to authenticate with 42 API'}, status=status.HTTP_400_BAD_REQUEST)

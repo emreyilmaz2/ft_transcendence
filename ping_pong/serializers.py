@@ -1,11 +1,16 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from django.contrib.auth import authenticate, password_validation
-from .models import FriendRequest
+from .models import FriendRequest, Match
 from django.conf import settings
 from django.contrib.auth.models import User
 
 User = get_user_model()
+
+class MatchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Match
+        fields = ['id', 'player1', 'player2', 'score', 'result', 'match_date']
 
 class FriendSerializer(serializers.ModelSerializer):
     class Meta:

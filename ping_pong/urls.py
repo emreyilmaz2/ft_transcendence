@@ -1,6 +1,6 @@
 from django.urls import path
 from .import views
-from .views import UserRegistrationView, UserLoginView, UserLogoutView, ListUsersView, Friends, ViewFriendRequest, Profile, account42, SendOTPView
+from .views import UserRegistrationView, UserLoginView, UserLogoutView, ListUsersView, Friends, ViewFriendRequest, Profile, account42, SendOTPView, MatchView
 
 urlpatterns = [
     path('register/', UserRegistrationView.as_view(), name='user-register'),
@@ -13,4 +13,5 @@ urlpatterns = [
     path('images/<str:image_name>', views.get_image, name='get_image'),
     path('42-api/', account42, name='account42'),
     path('send-otp/', SendOTPView.as_view(), name='send-otp'),
+    path('match/', MatchView.as_view(), name='match-api'),
 ]
