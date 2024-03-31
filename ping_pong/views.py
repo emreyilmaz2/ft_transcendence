@@ -36,14 +36,13 @@ User = get_user_model()
 def get_image(request, image_name):
     # Resmin dosya yolu
     image_path = os.path.join(settings.BASE_DIR, 'static/images', image_name)
-
     # Resmi HTTP yanıtı olarak gönder
     return FileResponse(open(image_path, 'rb'), content_type='image/jpeg')
 
 class SendOTPView(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request, *args, **kwargs):
-        if (request.method == "POST" and request.data.get('type') == "send"):
+        if (request.method == "POST" and request.data.get('type') == 'send'):
             auth_header = request.headers.get('Authorization')
             if auth_header:
                 # Authorization: Bearer your_token_here
@@ -52,7 +51,8 @@ class SendOTPView(APIView):
                 return Response({'message': 'Your token is not received'}, status=status.HTTP_400_NOT_FOUND)
             decoded_token = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
             user_id = decoded_token.get("user_id")
-            current_user = User.objects.get(id=user_id)
+            current_user = request.user
+            # current_user = User.objects.get(id=user_id)
             try:
                 print('geldim ve ilgilendigim kisi : ',current_user.username)
                 otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
@@ -68,14 +68,15 @@ class SendOTPView(APIView):
                 return Response({'message': 'OTP sent to your email'}, status=status.HTTP_200_OK)
             except User.DoesNotExist:
                 return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-        elif (request.method == "POST" and request.data.get('type') == "verify"):
+        elif (request.method == "POST" and request.data.get('type') == 'verify'):
             current_user = request.user
             code_to_verify = request.data.get('code')
             print('current_user_otp : ', current_user.otp)
             print('provided_otp : ', code_to_verify)
             if(current_user.otp == code_to_verify):
+                current_user.otp = ''  # Doğrulama kodunu sıfırla
+                current_user.save()
                 return Response({'status': 'Success!'}, status=status.HTTP_200_OK)
-                current_user_otp.delete()
             else:
                 return Response({'status': 'Failure!'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -103,7 +104,6 @@ class Profile(generics.UpdateAPIView):
 
 class ListUsersView(APIView):
     permission_classes = [IsAuthenticated]
-
     def get(self, request, *args, **kwargs):
         user = request.user
         username = request.query_params.get('searchTerm', '')
