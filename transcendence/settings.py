@@ -148,3 +148,8 @@ SIMPLE_JWT = {
     "JWK_URL": None,
     "LEEWAY": 0,
 }
+
+# 42 OAuth ayarları
+CLIENT_ID_42 = 'u-s4t2ud-262a8761a2528a18493301dcd0b753108abb14aaba5b7e6aee13fc117b072fc2'
+CLIENT_SECRET_42 = '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'
+REDIRECT_URI_42 = 'http://localhost:8080'

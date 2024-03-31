@@ -10,3 +10,4 @@ PyJWT
 django-filter
 python-dotenv
 djangorestframework_simplejwt
+requests

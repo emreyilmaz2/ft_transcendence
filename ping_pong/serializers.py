@@ -73,7 +73,7 @@ class UpdateUserSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)
     password = serializers.CharField(required=False, write_only=True, validators=[password_validation.validate_password])
     password2 = serializers.CharField(required=False, write_only=True)
-    old_password = serializers.CharField(required=True, write_only=True)
+    old_password = serializers.CharField(required=False, write_only=True)
     avatar = serializers.ImageField(required=False)
 
     class Meta:
@@ -84,6 +84,7 @@ class UpdateUserSerializer(serializers.ModelSerializer):
         current_user = self.context['request'].user
         password = attrs.get('password')
         password2 = attrs.get('password2')
+        old_password = attrs.get('old_password')
         if password is not None and password2 is not None:
             if password != password2:
                 raise serializers.ValidationError({"password": "Password fields didn't match."})
@@ -109,8 +110,6 @@ class UpdateUserSerializer(serializers.ModelSerializer):
         
         if 'avatar' in validated_data:
             instance.avatar = validated_data['avatar']
-        # else:
-        #     instance.avatar = settings.DEFAULT_USER_AVATAR
 
         if 'password' in validated_data:
             instance.set_password(validated_data['password'])

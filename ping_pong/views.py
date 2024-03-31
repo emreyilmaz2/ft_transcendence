@@ -21,12 +21,14 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.filters import SearchFilter
 from django.db.models import OuterRef, Subquery, Q
 from django.conf import settings
-import random
+import random, requests
+from rest_framework.decorators import api_view
 
-
-
+# views.py
+from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.mail import send_mail
+
 # Create your views here.
 
 User = get_user_model()
@@ -70,6 +72,7 @@ class SendOTPView(APIView):
             code_to_verify = request.data.get('code')
             if(current_user.otp == code_to_verify):
                 return Response({'status': 'Success!'}, status=status.HTTP_200_OK)
+                current_user_otp.delete()
             else:
                 return Response({'status': 'Failure!'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -312,60 +315,66 @@ class ViewFriendRequest(APIView):
         
         return HttpResponse(json.dumps(payload), content_type="application/json")
 
-@csrf_exempt
+def get_tokens_for_user(user):
+    refresh = RefreshToken.for_user(user)
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }
+
+def get_or_create_user(user_data):
+    # Bu kısım projenizin User modeline bağlı olarak değişebilir.
+    user, _ = User.objects.get_or_create(
+        username=user_data['login'],
+        defaults={
+            'email': user_data['email'],
+            'first_name': user_data['first_name'],
+            'last_name': user_data['last_name'],
+            'avatar': user_data['image']['link'],
+        }
+    )
+    return user
+
+def exchange_code_for_token(code):
+    token_url = 'https://api.intra.42.fr/oauth/token'
+    token_data = {
+        'grant_type': 'authorization_code',
+        'client_id': settings.CLIENT_ID_42,
+        'client_secret': settings.CLIENT_SECRET_42,
+        'code': code,
+        'redirect_uri': settings.REDIRECT_URI_42
+    }
+    token_response = requests.post(token_url, data=token_data)
+    token_response.raise_for_status()  # Hata varsa exception fırlatır.
+    return token_response.json()
+
+def get_user_info(access_token):
+    user_info_url = 'https://api.intra.42.fr/v2/me'
+    headers = {'Authorization': f'Bearer {access_token}'}
+    user_response = requests.get(user_info_url, headers=headers)
+    user_response.raise_for_status()  # Hata varsa exception fırlatır.
+    return user_response.json()
+
+@api_view(['POST'])
 def account42(request):
     if request.method == 'POST':
-        jsecuritykey="NULL"
-        data = json.loads(request.body)
-        authorization_code = data.get('code')  # Frontend'den gelen yetkilendirme kodu
-        if authorization_code:
-            # Yetkilendirme kodunu kullanarak access_token al
-            token_url = 'https://api.intra.42.fr/oauth/token'
-            client_id = 'u-s4t2ud-262a8761a2528a18493301dcd0b753108abb14aaba5b7e6aee13fc117b072fc2'
-            client_secret = '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'
-            redirect_uri = 'http://localhost:8080'
-            grant_type = 'authorization_code'
-            
-            token_data = {
-                'grant_type': grant_type,
-                'client_id': client_id,
-                'client_secret': client_secret,
-                'code': authorization_code,
-                'redirect_uri': redirect_uri
+        data = request.data
+        authorization_code = data.get('code')
+
+        if not authorization_code:
+            return Response({'error': 'No authorization code provided'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            token_info = exchange_code_for_token(authorization_code)
+            user_info = get_user_info(token_info['access_token'])
+            user = get_or_create_user(user_info)
+            #Jwt token creation
+            tokens = get_tokens_for_user(user)
+            token = {
+                'refresh': tokens['refresh'],
+                'access': tokens['access'],
             }
-            token_response = requests.post(token_url, data=token_data)
-            if token_response.status_code == 200:
-                token_info = token_response.json()
-                access_token = token_info.get('access_token')
-
-                # Access token ile kullanıcı bilgilerini al
-                user_info_url = 'https://api.intra.42.fr/v2/me'
-                headers = {'Authorization': f'Bearer {access_token}'}
-                user_response = requests.get(user_info_url, headers=headers)
-                
-                if user_response.status_code == 200:
-                    user_data = user_response.json()
-                    user_exists = users.objects.filter(username=user_data['login']).exists()# Kullanıcı adıyla veritabanını kontrol et eğer bu kullanıcı yoksa veritabanına kaydet.
-                    if not user_exists:
-                        jsecuritykey=generate_random_string()
-                        users.objects.create(
-                        username=user_data['login'],
-                        name=user_data['first_name'],
-                        surname=user_data['last_name'],
-                        email=user_data['email'],
-                        profile_image = user_data['image']['link'],
-                        securitykey= jsecuritykey
-                    )
-                        return JsonResponse({'securitykey': jsecuritykey,'username': user_data['login'], 'name': user_data['first_name'], 'surname': user_data['last_name'], 'email': user_data['email'], 'profile_image': user_data['image']['link']})
-                    else:
-                        user = users.objects.get(username=user_data['login'])
-                        return JsonResponse({'securitykey': user.securitykey,'username': user.username, 'name': user.name, 'surname': user.surname, 'email': user.email, 'profile_image': user.profile_image})
-                else:
-                    return JsonResponse({'error': 'Failed to fetch user data', 'status_code': user_response.status_code})
-            else:
-                return JsonResponse({'error': 'Failed to obtain access token', 'status_code': token_response.status_code})
-        else:
-            return JsonResponse({'error': 'No authorization code provided'})
-
+            return Response(token, status=status.HTTP_200_OK)
+        except requests.RequestException as e:
+            return Response({'error': 'Failed to authenticate with 42 API'}, status=status.HTTP_400_BAD_REQUEST)
     else:
-        return JsonResponse({'error': 'Invalid request method'})
+        return Response({'error': 'Invalid request method'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
