@@ -77,7 +77,6 @@ DATABASES = {
     }
 }
 
-
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 PASSWORD_HASHERS = [
@@ -93,11 +92,8 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
@@ -122,7 +118,6 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 #Django Rest Framework JWT Authentication
-
 CSRF_COOKIE_SECURE = False
 CSRF_USE_SESSIONS = False
 

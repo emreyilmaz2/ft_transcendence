@@ -344,9 +344,18 @@ def exchange_code_for_token(code):
         'code': code,
         'redirect_uri': settings.REDIRECT_URI_42
     }
-    token_response = requests.post(token_url, data=token_data)
-    token_response.raise_for_status()  # Hata varsa exception fırlatır.
-    return token_response.json()
+    try:
+        token_response = requests.post(token_url, data=token_data)
+        token_response.raise_for_status()
+        return token_response.json()  # Token bilgisini döndür
+    except requests.RequestException as e:
+        print(f'HTTP Request failed: {e}')  # Hata detaylarını logla
+        if token_response is not None:
+            print(token_response.text)  # Sunucunun hata ile ilgili verdiği cevabı logla
+        raise  # Hatayı yukarıya fırlat
+    # token_response = requests.post(token_url, data=token_data)
+    # token_response.raise_for_status()  # Hata varsa exception fırlatır.
+    # return token_response.json()
 
 def get_user_info(access_token):
     user_info_url = 'https://api.intra.42.fr/v2/me'
@@ -364,15 +373,21 @@ def account42(request):
         if not authorization_code:
             return Response({'error': 'No authorization code provided'}, status=status.HTTP_400_BAD_REQUEST)
         try:
+            print('test0')
             token_info = exchange_code_for_token(authorization_code)
+            print('test1')
             user_info = get_user_info(token_info['access_token'])
+            print('test2')
             user = get_or_create_user(user_info)
+            print('test3')
             #Jwt token creation
             tokens = get_tokens_for_user(user)
+            print('test4')
             token = {
-                'refresh': tokens['refresh'],
-                'access': tokens['access'],
+                # 'refresh': tokens['refresh'],
+                'accessToken': tokens['access'],
             }
+            print('test5')
             return Response(token, status=status.HTTP_200_OK)
         except requests.RequestException as e:
             return Response({'error': 'Failed to authenticate with 42 API'}, status=status.HTTP_400_BAD_REQUEST)
