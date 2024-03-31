@@ -51,13 +51,14 @@ class SendOTPView(APIView):
                 return Response({'message': 'Your token is not received'}, status=status.HTTP_400_NOT_FOUND)
             decoded_token = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
             user_id = decoded_token.get("user_id")
-            current_user = request.user
-            # current_user = User.objects.get(id=user_id)
+            # current_user = request.user
+            current_user = User.objects.get(id=user_id)
             try:
-                print('geldim ve ilgilendigim kisi : ',current_user.username)
+                print('1 - geldim ve ilgilendigim kisi : ',current_user.username)
                 otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
                 current_user.otp = otp
                 current_user.save()
+                print('2 - kaydettim -> ', otp)
                 send_mail(
                     'Ping Pong Game \'e Hosgeldiniz!',
                     f'Giris yapmak icin kodunuz: {otp}',
@@ -71,8 +72,8 @@ class SendOTPView(APIView):
         elif (request.method == "POST" and request.data.get('type') == 'verify'):
             current_user = request.user
             code_to_verify = request.data.get('code')
-            print('current_user_otp : ', current_user.otp)
-            print('provided_otp : ', code_to_verify)
+            print('3 - current_user_otp : ', current_user.otp)
+            print('4 - provided_otp : ', code_to_verify)
             if(current_user.otp == code_to_verify):
                 current_user.otp = ''  # Doğrulama kodunu sıfırla
                 current_user.save()
@@ -101,7 +102,14 @@ class Profile(generics.UpdateAPIView):
             # return Response("Profile updated successfully", status=status.HTTP_200_OK)
             # Niran guncelleme yapildiktan sonra kullanici bilgilerinin dondurulmesini istedigi icin degistirildi
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+class UserDetailView(APIView):
+    def get(self, request, username, *args, **kwargs):
+        try:
+            user = User.objects.get(username=username)
+            serializer = UserSerializer(user)
+            return Response(serializer.data)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=404)
 class ListUsersView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, *args, **kwargs):

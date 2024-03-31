@@ -20,8 +20,6 @@ Django ve benzeri çerçeveler, bu token'ı otomatik olarak oluşturur ve kullan
 Bu sayede, kullanıcıların güvenliği ve gizliliği korunmuş olur.
 
 
-
-
 #PSQL KOMUTLARI
 Connect to a Database: “psql -d db_name -U user_name”.
 List All Databases: “\l”
@@ -37,9 +35,6 @@ Show Commands History: “\s”
 Execute Previous Command: “\g”
 Clear Screen: “\! cls”
 Quit psql: “\q”
-
-
-
 
 
 #DOCKER KOMUTLARI
@@ -71,3 +66,9 @@ API'ler icin kullanma kilavuzu
     amac:       Arkadaslik isteklerini gormek icin kullanilir.
     endpoint:   localhost:8000/api/friend_requests/
     body:       bir sey eklenmesine gerek yoktur.
+
+
+
+Python sql commands:
+- python3/python manage.py(source_code) makemigrations -> yapilan degisikler icin veritabani komut seti olusturur.
+- python3/python manage.py(source_code) migrate -> yapilan degisikleri veri tabani ile birlestirir.
