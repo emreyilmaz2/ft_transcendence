@@ -21,7 +21,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     class Meta:
         model = User
-        fields = ('id', 'username', 'first_name', 'last_name', 'email', 'password', 'avatar')
+        fields = ('id', 'username', 'first_name', 'last_name', 'email', 'password', 'normal_avatar', 'intra_avatar')
         extra_kwargs = {
             'username': {'required': True},
             'first_name': {'required': True},
@@ -35,7 +35,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
             email=validated_data['email'],
-            avatar=settings.DEFAULT_USER_AVATAR
+            normal_avatar=settings.DEFAULT_USER_AVATAR
         )
         user.set_password(validated_data['password'])
         user.save()
@@ -44,7 +44,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username','first_name', 'last_name', 'email', 'date_joined', 'avatar', 'friends', 'has_logged_in']
+        fields = ['id', 'username','first_name', 'last_name', 'email', 'date_joined', 'normal_avatar','intra_avatar', 'friends', 'has_logged_in']
 
 class FriendRequestSerializer(serializers.ModelSerializer):
     user_role = serializers.SerializerMethodField()
@@ -114,7 +114,7 @@ class UpdateUserSerializer(serializers.ModelSerializer):
         instance.has_logged_in = False
         
         if 'avatar' in validated_data:
-            instance.avatar = validated_data['avatar']
+            instance.normal_avatar = validated_data['avatar']
 
         if 'password' in validated_data:
             instance.set_password(validated_data['password'])

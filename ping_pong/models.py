@@ -5,8 +5,8 @@ from django.core.exceptions import ObjectDoesNotExist
 
 # Create your models here.
 class User(AbstractUser):
-    # avatar = models.ImageField(upload_to='images/', null=True, blank=True)  # Örnek bir avatar alanı
-    avatar = models.URLField(max_length=200, blank=True)  # URLField kullanarak tam URL'yi saklayın
+    normal_avatar = models.ImageField(upload_to='images/', null=True, blank=True)  # Örnek bir avatar alanı
+    intra_avatar = models.URLField(max_length=200, null=True, blank=True)  # URLField kullanarak tam URL'yi saklayın
     friends = models.ManyToManyField('User', related_name='user_friends', blank=True)
     has_logged_in = models.BooleanField(default=False)
     matches = models.ManyToManyField('Match', related_name='player_matches', blank=True)

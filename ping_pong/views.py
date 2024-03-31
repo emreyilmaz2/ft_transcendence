@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model, login, logout, authenticate
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import UserRegistrationSerializer, UserSerializer, UpdateUserSerializer, FriendRequestSerializer, FriendSerializer
+from .serializers import UserRegistrationSerializer, UserSerializer, UpdateUserSerializer, FriendRequestSerializer, FriendSerializer, MatchSerializer
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import User
@@ -54,12 +54,13 @@ class SendOTPView(APIView):
             user_id = decoded_token.get("user_id")
             current_user = User.objects.get(id=user_id)
             try:
+                print('geldim ve ilgilendigim kisi : ',current_user.username)
                 otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
                 current_user.otp = otp
                 current_user.save()
                 send_mail(
-                    'Your OTP',
-                    f'Your OTP is: {otp}',
+                    'Ping Pong Game \'e Hosgeldiniz!',
+                    f'Giris yapmak icin kodunuz: {otp}',
                     'busemre999@gmail.com',
                     [current_user.email],
                     fail_silently=False,
@@ -70,6 +71,8 @@ class SendOTPView(APIView):
         elif (request.method == "POST" and request.data.get('type') == "verify"):
             current_user = request.user
             code_to_verify = request.data.get('code')
+            print('current_user_otp : ', current_user.otp)
+            print('provided_otp : ', code_to_verify)
             if(current_user.otp == code_to_verify):
                 return Response({'status': 'Success!'}, status=status.HTTP_200_OK)
                 current_user_otp.delete()
@@ -306,7 +309,6 @@ class ViewFriendRequest(APIView):
                 query &= (Q(sender__username__icontains=searchTerm) | Q(receiver__username__icontains=searchTerm))
 
             friend_requests = FriendRequest.objects.filter(query).distinct()
-
             # Serializer'ı kullanarak JSON'a dönüştür
             serializer = FriendRequestSerializer(friend_requests, many=True, context={'request': request})
             payload['friend_requests'] = serializer.data
@@ -316,15 +318,20 @@ class ViewFriendRequest(APIView):
         return HttpResponse(json.dumps(payload), content_type="application/json")
 
 class MatchView(APIView):
-    def get(self, request, args, **kwargs):
-        matches = Match.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        current_user = request.user
+        matches = current_user.matches.all()
         serializer = MatchSerializer(matches, many=True)
         return Response(serializer.data)
-    def post(self, request,args, **kwargs):
+    def post(self, request):
+        current_user = request.user
         serializer = MatchSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            # Maçı kaydetmeden önce kullanıcının maç geçmişine ekleyin
+            match = serializer.save()
+            current_user.matches.add(match)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)    
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 def get_tokens_for_user(user):
@@ -342,7 +349,7 @@ def get_or_create_user(user_data):
             'email': user_data['email'],
             'first_name': user_data['first_name'],
             'last_name': user_data['last_name'],
-            'avatar': user_data['image']['link'],
+            'intra_avatar': user_data['image']['link'],
         }
     )
     return user
@@ -356,18 +363,9 @@ def exchange_code_for_token(code):
         'code': code,
         'redirect_uri': settings.REDIRECT_URI_42
     }
-    try:
-        token_response = requests.post(token_url, data=token_data)
-        token_response.raise_for_status()
-        return token_response.json()  # Token bilgisini döndür
-    except requests.RequestException as e:
-        print(f'HTTP Request failed: {e}')  # Hata detaylarını logla
-        if token_response is not None:
-            print(token_response.text)  # Sunucunun hata ile ilgili verdiği cevabı logla
-        raise  # Hatayı yukarıya fırlat
-    # token_response = requests.post(token_url, data=token_data)
-    # token_response.raise_for_status()  # Hata varsa exception fırlatır.
-    # return token_response.json()
+    token_response = requests.post(token_url, data=token_data)
+    token_response.raise_for_status()  # Hata varsa exception fırlatır.
+    return token_response.json()
 
 def get_user_info(access_token):
     user_info_url = 'https://api.intra.42.fr/v2/me'
