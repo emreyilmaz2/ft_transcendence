@@ -23,15 +23,37 @@ from django.db.models import OuterRef, Subquery, Q
 from django.conf import settings
 import random, requests
 from rest_framework.decorators import api_view
-
 # views.py
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.mail import send_mail
 
+import secrets
+from django.core.cache import cache
 # Create your views here.
 
 User = get_user_model()
+class LanguagePreference(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request, *args, **kwargs):
+        if request.method == 'POST':
+            user = request.user
+            language = request.data.get('language')
+            if language:
+                user.languagePreference = language
+                user.save()
+                return JsonResponse({'status': 'success', 'message': 'Dil tercihi güncellendi.'})
+            else:
+                return JsonResponse({'status': 'error', 'message': 'Dil tercihi güncellenemedi.'})
+        return JsonResponse({'status': 'error', 'message': 'Geçersiz istek.'})
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        if user.is_authenticated:
+            language_preference = user.languagePreference if user.languagePreference else 'default'
+            return JsonResponse({'language': language_preference})
+        else:
+            return JsonResponse({'error': 'Kullanıcı giriş yapmamış.'}, status=401)
+
 
 def get_image(request, image_name):
     # Resmin dosya yolu
@@ -46,7 +68,7 @@ class SendOTPView(APIView):
             auth_header = request.headers.get('Authorization')
             if auth_header:
                 # Authorization: Bearer your_token_here
-                token = auth_header.split(' ')[1]  # Bearer kelimesinden sonra gelen token'ı al
+                token = auth_header.split(' ')[1]  # Bearer kelimesinden sonra gelen token'ı al, 0->Bearer 1->JWT Token
             else:
                 return Response({'message': 'Your token is not received'}, status=status.HTTP_400_NOT_FOUND)
             decoded_token = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
@@ -54,11 +76,9 @@ class SendOTPView(APIView):
             # current_user = request.user
             current_user = User.objects.get(id=user_id)
             try:
-                print('1 - geldim ve ilgilendigim kisi : ',current_user.username)
                 otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
                 current_user.otp = otp
                 current_user.save()
-                print('2 - kaydettim -> ', otp)
                 send_mail(
                     'Ping Pong Game \'e Hosgeldiniz!',
                     f'Giris yapmak icin kodunuz: {otp}',
@@ -72,8 +92,6 @@ class SendOTPView(APIView):
         elif (request.method == "POST" and request.data.get('type') == 'verify'):
             current_user = request.user
             code_to_verify = request.data.get('code')
-            print('3 - current_user_otp : ', current_user.otp)
-            print('4 - provided_otp : ', code_to_verify)
             if(current_user.otp == code_to_verify):
                 current_user.otp = ''  # Doğrulama kodunu sıfırla
                 current_user.save()
@@ -85,6 +103,17 @@ class Profile(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
     # Kullanicin profil bilgilerine erismesi icin kullanilir
     def get(self, request, *args, **kwargs):
+        auth_header = request.headers.get('Authorization')
+        if auth_header:
+            # Authorization: Bearer your_token_here
+            token = auth_header.split(' ')[1]  # Bearer kelimesinden sonra gelen token'ı al, 0->Bearer 1->JWT Token
+        else:
+            return Response({'message': 'Your token is not received'}, status=status.HTTP_400_NOT_FOUND)
+        decoded_token = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        user_id = decoded_token.get("user_id")
+        # current_user = request.user
+        current_user = User.objects.get(id=user_id)
+        
         current_user = request.user
         if current_user.is_authenticated:
             return Response(UserSerializer(instance=current_user).data, status=status.HTTP_200_OK)
@@ -109,7 +138,7 @@ class UserDetailView(APIView):
             serializer = UserSerializer(user)
             return Response(serializer.data)
         except User.DoesNotExist:
-            return Response({'error': 'User not found'}, status=404)
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 class ListUsersView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, *args, **kwargs):

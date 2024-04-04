@@ -6,6 +6,7 @@ RUN pip install -r requirements.txt
 
 # Projedeki tüm dosyaları Docker imajına kopyala
 COPY . .
+
 # Uygulamanın çalıştırılacağı portu belirle (Django'nun varsayılan portu: 8000)
 EXPOSE 8000
 # Django uygulamasını çalıştır (Bu komut geliştirme ortamı için uygundur)

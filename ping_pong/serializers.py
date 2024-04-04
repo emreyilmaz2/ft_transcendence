@@ -7,21 +7,24 @@ from django.contrib.auth.models import User
 
 User = get_user_model()
 
+# Maç verilerini serileştirmek, düzenlemek için
 class MatchSerializer(serializers.ModelSerializer):
     class Meta:
         model = Match
         fields = ['id', 'player1', 'player2', 'score', 'result', 'match_date']
 
+# Belirli bir kullanıcını arkadaşlarını serileştirmek, düzenlemek için
 class FriendSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'has_logged_in']
+        fields = ['id', 'first_name', 'last_name', 'has_logged_in']
 
+# Kullanıcı kayıt olurken gelen bilgileri kolay yönetmek ve doğrulama işlemlerini yapmak için kullanılır
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     class Meta:
         model = User
-        fields = ('id', 'username', 'first_name', 'last_name', 'email', 'password', 'normal_avatar', 'intra_avatar')
+        fields = ('id', 'username', 'first_name', 'last_name', 'email', 'password', 'normal_avatar', 'intra_avatar', 'languagePreference')
         extra_kwargs = {
             'username': {'required': True},
             'first_name': {'required': True},
@@ -35,17 +38,22 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
             email=validated_data['email'],
-            normal_avatar=settings.DEFAULT_USER_AVATAR
+            normal_avatar=settings.DEFAULT_USER_AVATAR,
+            languagePreference='Türkçe'
         )
         user.set_password(validated_data['password'])
         user.save()
         return user
     
+# Kullanıcı bilgilerini serileştirmek düzenlemek için kullanılır
 class UserSerializer(serializers.ModelSerializer):
+    matches = MatchSerializer(many=True, read_only=True)  # Maçları döndürmek için MatchSerializer'ı kullan
     class Meta:
         model = User
-        fields = ['id', 'username','first_name', 'last_name', 'email', 'date_joined', 'normal_avatar','intra_avatar', 'friends', 'has_logged_in']
+        fields = ['id', 'username','first_name', 'last_name', 'email', 'date_joined',
+                'normal_avatar','intra_avatar', 'friends', 'has_logged_in', 'languagePreference', 'matches']
 
+# Arkadaşlık isteklerini serileştirmek düzenlemek için kullanılır
 class FriendRequestSerializer(serializers.ModelSerializer):
     user_role = serializers.SerializerMethodField()
     sender = serializers.SerializerMethodField()

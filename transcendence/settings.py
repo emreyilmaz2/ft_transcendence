@@ -23,6 +23,14 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = 'busemre999@gmail.com'
 EMAIL_HOST_PASSWORD = 'ayra xksr olvm gbep'
 
+# # SSL Certification Settings
+# SECURE_SSL_REDIRECT = True
+# SESSION_COOKIE_SECURE = True
+# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # Ön uç sunucunuz HTTPS'i belirten bir başlık ile sunucuya gelen bağlantıları sağlar
+# # SSL Sertifikası ve Anahtarı
+# SECURE_SSL_CERTIFICATE = '../cert.pem'
+# SECURE_SSL_KEY = '../key.pem'
+
 
 # Application definition
 INSTALLED_APPS = [
