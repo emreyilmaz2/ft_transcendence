@@ -1,0 +1,93 @@
+    #CSRF NEDIR
+CSRF (Cross-Site Request Forgery), genellikle "session riding" veya "one-click attack" olarak da adlandırılan bir saldırı türüdür.
+Bu saldırı türünde, bir kullanıcının tarayıcısında oturum açıkken, kötü niyetli bir saldırganın kontrolündeki
+başka bir web sitesi veya içerik, kullanıcının adına istekler gönderir.
+
+Bu tür saldırıların önlenmesi için Django gibi birçok web uygulama çerçevesi, CSRF koruması sağlar.
+CSRF koruması, her form veya AJAX isteği için sunucu tarafında benzersiz bir token oluşturulmasını ve bu token'ın talebe eklenmesini gerektirir.
+Bu token, kullanıcının oturumunu belirtir ve yalnızca sayfanın sunucusunda oluşturulan formlarla ilişkilendirilir.
+
+Örneğin, bir kullanıcı bir web uygulamasına giriş yaptığında, sunucu tarafından oturum bilgileri oluşturulur ve kullanıcıya özel bir CSRF token
+da üretilir. Bu token, kullanıcının tarayıcısında saklanır ve sayfanın form veya AJAX isteklerine eklenir. 
+Sunucu, bir istek aldığında, bu CSRF token'ı kontrol eder ve token'ın doğru olduğunu doğruladıktan sonra isteği işler.
+
+Django'da CSRF koruması varsayılan olarak etkindir. Oturum açan her kullanıcı, sunucu tarafından oluşturulan CSRF token'ını alır. 
+Bu token, kullanıcının tarayıcısında saklanır ve sunucuya her istek gönderildiğinde, isteğe otomatik olarak eklenir. 
+Bu sayede, kullanıcılar oturum açıkken bile kötü niyetli bir saldırgan tarafından gönderilen isteklerin yanıltılmasını önlenir.
+
+Özetle, CSRF token'ı, her isteğin kullanıcının oturumunu doğrulamasına yardımcı olan bir güvenlik önlemidir. 
+Django ve benzeri çerçeveler, bu token'ı otomatik olarak oluşturur ve kullanıcı oturumu açıkken isteklere ekler. 
+Bu sayede, kullanıcıların güvenliği ve gizliliği korunmuş olur.
+
+
+#PSQL KOMUTLARI
+Connect to a Database: “psql -d db_name -U user_name”.
+List All Databases: “\l”
+Access or Switch a Database: “\c db_name”
+List All Tables: “\dt”
+List Data on a Table "SELECT*FROM db_name;"
+Drop an item from table "DELETE FROM todos WHERE id = 1"
+
+Describe a Specific Table: “\d tab_name”
+List All Schemas: “\dn”
+List All Users: “\du”
+Show Commands History: “\s”
+Execute Previous Command: “\g”
+Clear Screen: “\! cls”
+Quit psql: “\q”
+
+
+#DOCKER KOMUTLARI
+docker ps                               // calisan konteynerleri goster
+docker compose build                    // Build alan komut
+docker compose up --build               // Ayaga kaldirir ama once build alir
+docker exec -it 'container_name' 'bash' // konteyner in icinde komut calistir
+docker container ls
+docker volume ls
+
+
+API'ler icin kullanma kilavuzu
+1- path('users/', ListUsersView.as_view(), name='user-list'),
+    amac:       Serverdaki kayitli kullanicilari gormek icin kullanilir.
+    endpoint:   localhost:8000/api/users
+    body:       bir sey eklenmesine gerek yoktur.
+
+2- path('profile_update/', UserUpdateView.as_view(), name='profile-update'),
+    amac:       Kullanicin bilgilerini guncellemek icin kullanilir.
+    endpoint:   localhost:8000/api/profile_update
+    body        !(Detayli bilgi icin tunahan turnaya danisin)!
+
+3- path('send_friend_request/<int:receiver_user_id>/', sendFriendRequest.as_view(), name='send_friend_request'),
+    amac:       Arkadaslik istegi gondermek icin kullanilir. Diger kullanicilari gormek icin 1 numarali api'yi kullanabilirsiniz
+    endpoint:   localhost:8000/api/send_friend_request/2/ (2 numarali kullaniciya istek at)
+    body:       bir sey eklenmesine gerek yoktur.
+
+4- path('friend_requests/', ViewFriendRequest.as_view(), name='friend_request'),
+    amac:       Arkadaslik isteklerini gormek icin kullanilir.
+    endpoint:   localhost:8000/api/friend_requests/
+    body:       bir sey eklenmesine gerek yoktur.
+
+
+
+Python sql commands:
+- python3/python manage.py(source_code) makemigrations -> yapilan degisikler icin veritabani komut seti olusturur.
+- python3/python manage.py(source_code) migrate -> yapilan degisikleri veri tabani ile birlestirir.
+
+√ mail adresi icin 42 maili al
+√ butun degiskenleri env den al
+√ docker create network my-shared-network u otomatiklestir
+
+To-do
+- Pop up profil sayfasi dil ayari
+- Ilk sayfa yuklenmesı ıkı kere oluyor
+- lib dosyasi
+
+SECRET_KEY=django-insecure-&b$8w-#+ocy+@c96!kx_z3*6n6o=kv(gjnv%6_1rpd^4my(6a
+DEBUG=True
+DATABASE_URL=postgres://postgres:p123@sqd@db:5432/transcendence
+PASSWORD=sifre123
+EMAILHOST_PASSWORD=vuyh nnih kwhy ljnv
+CLIENT_42_SECRET_ID=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
+POSTGRES_DB=transcendence
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=p123@sqd

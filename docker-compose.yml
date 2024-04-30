@@ -1,0 +1,61 @@
+version: '3.8'
+services:
+  db:
+    build: ./backend_database
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .env
+    ports:
+      - "5433:5432"
+    networks:
+     - my-shared-network
+
+  django:
+    build: ./backend_django
+    volumes:
+      - ./backend_django:/app
+      - media_volume:/app/media  # Medya dosyaları için volume bağlantısı
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - db
+    networks:
+     - my-shared-network
+
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    volumes:
+      - static_volume:/src/static
+    ports:
+      - "3000:3000"
+    networks:
+      - my-shared-network
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    volumes:
+      - ./app/cert:/etc/nginx/ssl  # SSL sertifikaları için bağlantı
+      - media_volume:/nginx_media  # Medya dosyaları için volume bağlantısı
+      - static_volume:/static
+    ports:
+      - "443:443"
+    depends_on:
+      - app
+    networks:
+      - my-shared-network
+
+volumes:
+  postgres_data:
+  media_volume:  # Medya dosyaları için volume tanımı
+  static_volume:
+
+networks:
+  my-shared-network:
+    driver: bridge
