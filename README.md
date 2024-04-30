@@ -1,61 +1,51 @@
-### Bağımlılıkların yüklenmesi için
-- `npm install` ya da `npm i`
 
-### Build almak için
-- `npm run build`
+# Pong Game Web Application
 
-### Projeyi çalıştırmak içim
-- `npm start`
+## Overview
 
-# DOKUMAN EKLE
-Ping Pong Web Uygulaması
+This project is a full-stack web application showcasing a classic Ping Pong game, designed and developed by a team of five. The application is fully containerized using Docker, simplifying setup and deployment processes across different environments.
 
-Ping Pong Web Uygulaması, tam yığın geliştirme (full stack) prensiplerine dayanan ve ping pong oyununun basit bir örneğini içeren bir web sitesidir. Proje, bir ekip tarafından geliştirilmiştir ve aşağıdaki teknolojileri kullanmaktadır:
+## Features
 
-- Backend:
-  - PostgreSQL veritabanı kullanılarak veri depolanması sağlanmıştır.
-  - Django web framework kullanılmıştır.
+- **Responsive User Interface:** Utilizes pure vanilla JavaScript and Bootstrap.
+- **Secure Backend:** Django with PostgreSQL for robust data handling and application logic.
+- **Enhanced Security:** Secured via JWT and Gmail OAuth, with HTTPS implemented over Nginx.
+- **Multi-Language Support:** Broad accessibility with multi-language capabilities.
+- **Advanced 3D Gameplay:** Engaging user experience with sophisticated 3D graphics.
+- **Interactive Dashboards:** Dashboard for monitoring game and user statistics.
+- **Remote Authentication:** Features remote authentication using the Ecole 42 API.
 
-- Frontend:
-  - Pure vanilla JavaScript ve Bootstrap kullanılarak kullanıcı arayüzü oluşturulmuştur.
-  - Webpack kullanılarak modüler bir yapı sağlanmıştır.
+## Architecture
 
-Özellikler:
+The application is structured into four Docker containers:
+1. **Django Backend Container:** Manages backend logic and APIs.
+2. **PostgreSQL Database Container:** Handles all data storage needs.
+3. **Frontend Container (App Container):** Serves the frontend, built with Webpack.
+4. **Nginx Container:** Manages SSL layer and acts as a reverse proxy.
 
-- Kullanıcı Yönetimi:
-  - Kullanıcılar, profilleri ile alakalı birçok işlemi gerçekleştirebilirler.
-  - Arkadaşlarını ekleyebilir ve onların profillerini görüntüleyebilirler.
+## Getting Started
 
-- Giriş Yöntemleri:
-  - JWT token kullanılarak kimlik doğrulaması sağlanmıştır.
-  - Gmail OAuth mekanizması entegre edilmiştir.
-  - Ecole 42 APIs'i kullanılarak uzak doğrulama yöntemi eklenmiştir.
+To run this project using Docker:
 
-- Güvenlik:
-  - HTTPS katmanı eklenerek iletişim güvenliği sağlanmıştır.
+1. **Clone the Repository:**
+   ```
+   git clone [repository-url]
+   ```
+2. **Build and Run Containers:**
+   ```
+   docker-compose up --build
+   ```
+3. **Access the Application:**
+   Navigate to `https://localhost` in your web browser to access the application.
 
-Kurulum:
+## Docker Details
 
-1. Projeyi klonlayın:
+The `docker-compose.yml` file in the repository root defines the services, networks, and volumes for the containers.
 
-   git clone <repo_url>
+## Contributing
 
-2. Backend için gerekli bağımlılıkları yükleyin ve sunucuyu başlatın:
+Contributions are welcome. Please fork the repository and submit pull requests to contribute.
 
-   cd backend
-   pip install -r requirements.txt
-   python manage.py runserver
-
-3. Frontend için gerekli bağımlılıkları yükleyin ve sunucuyu başlatın:
-
-   cd frontend
-   npm install
-   npm start
-
-Katkıda Bulunma:
-
-1. Bu deposu (<repo_url>) forklayın.
-2. Yeni özellikler eklemek veya hataları düzeltmek için değişiklikler yapın.
-3. Değişikliklerinizi commitleyin (git commit -am 'Yeni özellik ekle').
-4. Deponuza pushlayın (git push origin main).
-5. Bir pull isteği (pull request) gönderin.
+## Acknowledgements
+- Heartfelt thanks to all team members and contributors.
+- Special acknowledgment to Ecole 42 for their remote authentication API and for the extraordinary and very good training it has provided us so far...
