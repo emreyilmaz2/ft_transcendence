@@ -5,6 +5,9 @@
 
 This project is a full-stack web application showcasing a classic Ping Pong game, designed and developed by a team of five. The application is fully containerized using Docker, simplifying setup and deployment processes across different environments.
 
+## Project Architecture
+<img width="750" alt="Screenshot 2024-04-30 at 16 00 37" src="https://github.com/emreyilmaz2/PingPongGame/assets/102359028/8061ba31-ac18-4537-afc4-639372805c36">
+
 ## Features
 
 - **Responsive User Interface:** Utilizes pure vanilla JavaScript and Bootstrap.
@@ -49,3 +52,11 @@ Contributions are welcome. Please fork the repository and submit pull requests t
 ## Acknowledgements
 - Heartfelt thanks to all team members and contributors.
 - Special acknowledgment to Ecole 42 for their remote authentication API and for the extraordinary and very good training it has provided us so far...
+
+## Geliştiriciler
+[![Tunahan](https://github.com/Tunarwn.png?size=100)](https://github.com/Tunarwn)
+[![Niran](https://github.com/nirankalyoncu.png?size=100)](https://github.com/nirankalyoncu)
+[![Bahadır](https://github.com/bahadirbolatt.png?size=100)](https://github.com/bahadirbolatt)
+[![Yasir](https://github.com/yasirkelesh.png?size=100)](https://github.com/yasirkelesh)
+[![Emre](https://github.com/emreyilmaz2.png?size=100)](https://github.com/emreyilmaz2)
+
