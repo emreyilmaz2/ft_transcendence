@@ -60,3 +60,5 @@ Contributions are welcome. Please fork the repository and submit pull requests t
 [![Yasir](https://github.com/yasirkelesh.png?size=100)](https://github.com/yasirkelesh)
 [![Emre](https://github.com/emreyilmaz2.png?size=100)](https://github.com/emreyilmaz2)
 
+theme: jekyll-theme-minimal
+
